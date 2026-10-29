@@ -151,7 +151,7 @@ ruby rt{font-size:.5em;color:var(--muted);font-weight:500}
 
 /* bottom dock */
 .dock{position:relative;z-index:3;flex:none;padding:10px 14px 12px}
-.composer{display:flex;align-items:center;gap:10px}
+.composer{display:flex;align-items:center;gap:8px}
 .dock .iconbtn{width:48px;height:48px}
 .composer textarea{box-sizing:border-box;flex:1;min-width:0;resize:none;border:1px solid var(--line-2);border-radius:24px;padding:12px 16px;font-size:16px;line-height:1.35;max-height:124px;overflow-y:hidden;background:var(--glass);color:var(--text);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
 .composer textarea::placeholder{color:var(--faint)}
@@ -165,7 +165,10 @@ ruby rt{font-size:.5em;color:var(--muted);font-weight:500}
 .callbtn{display:none;flex:1;min-width:0;height:56px;border-radius:28px;border:0;background:var(--peach);color:var(--peach-ink);font-weight:600;font-size:16.5px;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 32px rgba(243,181,156,.22)}
 .callbtn[data-on="true"]{background:rgba(255,123,114,.14);color:var(--rose);box-shadow:inset 0 0 0 1px rgba(255,123,114,.55)}
 .callbtn:disabled{opacity:.45;box-shadow:none}
-#kbBtn{display:none}
+#kbBtn,#koBtn{display:none}
+.app.handsfree:not(.typing) #koBtn{display:grid}
+.kobtn{font-weight:600;font-size:17px;font-family:var(--ui)}
+.kobtn[aria-pressed="true"]{background:var(--jade);color:#0c1a15;border-color:transparent}
 .app.handsfree #kbBtn{display:grid}
 .app.handsfree .callbtn{display:flex}
 .app.handsfree:not(.typing) #msg,.app.handsfree:not(.typing) #sendBtn{display:none}
@@ -261,6 +264,7 @@ ruby rt{font-size:.5em;color:var(--muted);font-weight:500}
 .reports .pk{font-size:13px;color:var(--muted)}
 .pbox{border:1px dashed var(--line-2);border-radius:16px;padding:11px 13px;font-size:14px;line-height:1.6;display:flex;flex-direction:column;gap:7px}
 .pbox .pk{color:var(--faint);font-size:12px}
+@media (max-width:370px){.dock .iconbtn{width:44px;height:44px}.callbtn{font-size:15.5px;gap:8px}}
 @media (max-height:640px){.stage{height:64%}.convo{max-height:42%}.status{margin-top:8px}}
 @media (prefers-reduced-motion:reduce){.wave i,.pending i,.status[data-s="think"] .wave i,.stage-av.is-photo img,.stage.speaking .stage-av.is-photo img,.composer textarea.yourturn,.live .dot,.rwait i{animation:none}}
 </style>
@@ -300,6 +304,7 @@ ruby rt{font-size:.5em;color:var(--muted);font-weight:500}
       <textarea id="msg" rows="1" enterkeyhint="send" autocomplete="off" autocapitalize="sentences" aria-label="보낼 말"></textarea>
       <button class="sendbtn" id="sendBtn" type="submit" aria-label="보내기"></button>
       <button class="callbtn" id="callBtn" type="button"></button>
+      <button class="iconbtn glass kobtn" id="koBtn" type="button" aria-label="한국어로 물어보기" aria-pressed="false" title="한국어로 물어보기">가</button>
       <button class="iconbtn glass" id="kbBtn" type="button" aria-label="글자로 입력" aria-pressed="false" title="글자로 입력"></button>
     </form>
     <p class="tip" id="tip"></p>
@@ -342,7 +347,6 @@ ruby rt{font-size:.5em;color:var(--muted);font-weight:500}
   </div>
   <div class="field"><span class="flabel">듣고 말하기</span>
     <label class="row col"><span><span>읽기 속도</span><b id="rateVal"></b></span><input type="range" id="optRate" min="0.6" max="1.2" step="0.05"></label>
-    <label class="row col"><span><span>말이 끝나고 기다리는 시간</span><b id="waitVal"></b></span><input type="range" id="optWait" min="1.5" max="6" step="0.5"></label>
     <label class="row"><span>받아쓰기를 멈추면 자동으로 보내기</span><input type="checkbox" id="optAutoSend"></label>
     <p class="fhint" id="voiceNote"></p>
   </div>
@@ -881,7 +885,7 @@ const TTS = (() => {
       try { synth.speak(u); } catch (e) { finish(); return; }
       setTimeout(() => { if (!done) start(); }, 450);
     };
-    if (HV.active() && /^(en|ja)/i.test(lang)) {
+    if (HV.active() && /^(en|ja|ko)/i.test(lang)) {
       try { synth && synth.cancel(); } catch (e) { /* ignore */ }
       HV.speak(text, lang.slice(0, 2).toLowerCase(), o.voice || 'F2', o.rate || 1, { onstart: start, onend: finish })
         .catch(e => { if (my !== seq || done) return; HV.fail(e); if (started) finish(); else device(); });
@@ -897,15 +901,40 @@ const TTS = (() => {
   function stop() { seq++; HV.stop(); try { synth && synth.cancel(); } catch (e) { /* ignore */ } }
   return { speak, unlock, stop, available: !!synth, has: l => !!pick(l), count: () => voices.length };
 })();
-function ttsLang(lang) { const c = CH(); return lang === 'en' ? (c.lang === 'en' ? c.tts : 'en-US') : 'ja-JP'; }
+function ttsLang(lang) { const c = CH(); return lang === 'ko' ? 'ko-KR' : lang === 'en' ? (c.lang === 'en' ? c.tts : 'en-US') : 'ja-JP'; }
+const HANGUL = /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/;
+/* Split a line into runs of Korean and of the practice language, so each part is read with the right voice. */
+function langRuns(text, target) {
+  if (!HANGUL.test(text)) return [{ text, lang: target }];
+  const other = target === 'ja' ? /[\u3040-\u30FF\u3400-\u9FFF\uFF66-\uFF9D]/ : /[A-Za-z]/;
+  const runs = [];
+  let cur = null;
+  for (const ch of text) {
+    const k = HANGUL.test(ch) ? 'ko' : other.test(ch) ? target : null;
+    if (!cur) { cur = { lang: k || target, text: ch }; continue; }
+    if (k && k !== cur.lang) {
+      if (/[A-Za-z\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(cur.text)) { runs.push(cur); cur = { lang: k, text: ch }; continue; }
+      cur.lang = k;
+    }
+    cur.text += ch;
+  }
+  if (cur) runs.push(cur);
+  return runs.map(r => ({ lang: r.lang, text: r.text.trim() })).filter(r => /[A-Za-z0-9\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/.test(r.text));
+}
 function say(text, lang, opt = {}) {
   const c = CH();
   const mine = opt.avatar !== false && lang === c.lang;
   const held = !opt.onDone && HF.isOn() && !busy;
   if (held) HF.hold();
-  TTS.speak(text, ttsLang(lang), { rate: S.rate * (opt.slow ? 0.72 : 1), pitch: mine ? c.pitch : 1, voice: voiceOf(c),
-    onstart: () => { if (mine) AV.setTalking(true); },
-    onend: () => { if (mine) AV.setTalking(false); if (opt.onDone) opt.onDone(); else if (held) HF.resume(); } });
+  const runs = langRuns(text, lang);
+  let i = 0;
+  const next = () => {
+    if (i >= runs.length) { if (mine) AV.setTalking(false); if (opt.onDone) opt.onDone(); else if (held) HF.resume(); return; }
+    const r = runs[i++];
+    TTS.speak(r.text, ttsLang(r.lang), { rate: S.rate * (opt.slow ? 0.72 : 1), pitch: mine ? c.pitch : 1, voice: voiceOf(c),
+      onstart: () => { if (mine) AV.setTalking(true); }, onend: next });
+  };
+  next();
 }
 
 /* ---------- Claude ---------- */
@@ -917,8 +946,8 @@ else if (!S.apiKey) blocked = 'nokey';
 function schema(lang) {
   if (lang === 'en') return [
     '{',
-    '  "reply": "your reply, in English",',
-    '  "ko": "natural Korean translation of reply",',
+    '  "reply": "your reply — in English, or in Korean only when the learner asks for help in Korean (see RULES)",',
+    '  "ko": "natural Korean translation of the English parts of reply (\"\" if reply is all Korean)",',
     '  "correction": null or {"better": "a natural English way to say the learner\'s last message", "why_ko": "one short Korean sentence explaining the change"},',
     '  "vocab": [{"word": "a useful word or phrase from your reply", "ko": "its Korean meaning"}],',
     '  "hints": [{"text": "a short reply the learner could say next, at their level", "ko": "its Korean meaning"}],',
@@ -927,10 +956,10 @@ function schema(lang) {
     '"vocab" has 0–2 items (skip words that are too easy for the level). "hints" has exactly 2 items.'].join('\n');
   return [
     '{',
-    '  "reply": "your reply, in Japanese",',
+    '  "reply": "your reply — in Japanese, or in Korean only when the learner asks for help in Korean (see RULES)",',
     '  "ruby": [["今日","きょう"],["はいい",""],["天気","てんき"],["ですね。",""]],',
     '  "reading": "reply written entirely in hiragana",',
-    '  "ko": "natural Korean translation of reply",',
+    '  "ko": "natural Korean translation of the Japanese parts of reply (\"\" if reply is all Korean)",',
     '  "correction": null or {"better": "a natural Japanese way to say the learner\'s last message", "better_reading": "better, in hiragana", "why_ko": "one short Korean sentence explaining the change"},',
     '  "vocab": [{"word": "a useful word or phrase from your reply", "reading": "hiragana", "ko": "its Korean meaning"}],',
     '  "hints": [{"text": "a short reply the learner could say next, at their level", "reading": "hiragana", "ko": "its Korean meaning"}],',
@@ -961,9 +990,10 @@ function buildPrompt(c, sc, log, level) {
     `LEARNER: a Korean speaker. Level: ${lv.p[c.lang]}`,
     ...profileLines(c.lang),
     'RULES:',
-    `- Stay in character and keep the conversation going; usually end with one short question. "reply" is only in ${lang}.`,
+    `- Stay in character and keep the conversation going; usually end with one short question. "reply" is in ${lang}, with one exception below.`,
+    `- KOREAN HELP: when the learner asks for help in Korean (how to say something in ${lang}, what a word means, that they did not understand you, or that they are stuck), answer kindly in natural Korean (1-3 short sentences, polite 해요체). Give the ${lang} expression they need in quotation marks, and invite them to try saying it in ${lang}. Put that ${lang} expression in correction.better too. On the following turn go back to ${lang}.`,
     '- The learner may type, use voice dictation (so ignore missing punctuation, capitalisation and small spelling slips), write Korean, or mix languages.',
-    `- If the learner wrote Korean (fully or partly), answer naturally in ${lang} and put a natural ${lang} way to say what they meant in correction.better.`,
+    `- If the learner simply answers in Korean (not asking for help), reply in ${lang} as usual and put a natural ${lang} way to say what they meant in correction.better.`,
     `- ${lv.fix} Otherwise "correction" is null. Never lecture inside "reply".`,
     `- If the learner asks what something means or how to say something, help briefly and in character, in ${lang}.`,
     '- Keep it friendly and suitable for all ages.',
@@ -1096,11 +1126,16 @@ function makeStreamSpeaker(lang, onDone) {
     if (finished) return;
     if (!q.length) { speaking = false; if (ended) { finished = true; if (mine) AV.setTalking(false); if (onDone) onDone(); } return; }
     speaking = true;
-    TTS.speak(q.shift(), ttsLang(lang), { rate: S.rate, pitch: mine ? c.pitch : 1, voice: voiceOf(c),
+    const r = q.shift();
+    TTS.speak(r.text, ttsLang(r.lang), { rate: S.rate, pitch: mine ? c.pitch : 1, voice: voiceOf(c),
       onstart: () => { if (mine) AV.setTalking(true); }, onend: next });
   }
   return {
-    push(t) { t = t.trim(); if (!t || finished) return; HV.prefetch(t, lang, voiceOf(c), S.rate); q.push(t); if (!speaking) next(); },
+    push(t) {
+      t = t.trim(); if (!t || finished) return;
+      for (const r of langRuns(t, lang)) { HV.prefetch(r.text, r.lang, voiceOf(c), S.rate); q.push(r); }
+      if (!speaking) next();
+    },
     end() { ended = true; if (!speaking) next(); },
     cancel() { q.length = 0; ended = true; finished = true; },
   };
@@ -1265,7 +1300,7 @@ function meNode(m, lang) {
   w.append(el('div', 'me', m.text));
   if (m.fix) {
     const f = el('div', 'fix');
-    f.append(el('div', 'fix-label', '더 자연스럽게'));
+    f.append(el('div', 'fix-label', HANGUL.test(m.text) ? '이렇게 말해 보세요' : '더 자연스럽게'));
     const bt = el('div', 'fix-better', m.fix.better); bt.lang = lang; f.append(bt);
     if (lang === 'ja' && S.showReading && m.fix.reading && m.fix.reading !== m.fix.better) { const r = el('div', 'reading', m.fix.reading); r.lang = 'ja'; f.append(r); }
     if (m.fix.why) f.append(el('div', 'fix-why', m.fix.why));
@@ -1335,9 +1370,9 @@ function applyMode() {
   kb.setAttribute('aria-label', typing ? '말로 하기' : '글자로 입력'); kb.title = kb.getAttribute('aria-label');
   $('#msg').placeholder = hf ? (c.lang === 'en' ? '영어로 써 보세요' : '일본어로 써 보세요') : '눌러서 말하기';
   $('#tipText').textContent = hf && !typing
-    ? `대화 시작을 누르고 그냥 말하세요. 말을 멈추고 ${S.waitSec}초가 지나면 ${c.k}가 대답해요.`
+    ? `대화 시작을 누르고 그냥 말하세요. 말이 끝나면 바로 ${c.k}가 대답해요. 막히면 '가'를 누르고 한국어로 물어보세요.`
     : hf ? '글자로 쓰고 보내기를 누르세요. 마이크 버튼을 누르면 말하기로 돌아가요.'
-    : '칸을 누르고 키보드의 마이크로 말하세요. 말을 멈추면 자동으로 보내요.';
+    : '칸을 누르고 키보드의 마이크로 말하세요. 말을 멈추면 바로 보내요. 막히면 한국어로 물어봐도 돼요.';
   renderLog(); updateTurn();
 }
 function lastHints() {
@@ -1511,8 +1546,6 @@ function renderSettings() {
   $('#optAutoSend').checked = !!S.autoSend;
   $('#optRate').value = String(S.rate);
   $('#rateVal').textContent = S.rate.toFixed(2) + '×';
-  $('#optWait').value = String(S.waitSec);
-  $('#waitVal').textContent = S.waitSec + '초';
   $('#apiField').hidden = IN_CLAUDE;
   $('#hvField').hidden = !HV.supported();
   $('#optHV').checked = !!S.humanVoice;
@@ -1569,8 +1602,6 @@ $('#optKo').addEventListener('change', e => { S.showKo = e.target.checked; save(
 $('#optReading').addEventListener('change', e => { S.showReading = e.target.checked; save(); renderLog(); });
 $('#optAutoSend').addEventListener('change', e => { S.autoSend = e.target.checked; save(); if (!S.autoSend) { clearTimeout(autoT); $('#sendBtn').classList.remove('arming'); } });
 $('#optRate').addEventListener('input', e => { S.rate = Math.min(1.2, Math.max(0.6, Number(e.target.value) || 0.9)); $('#rateVal').textContent = S.rate.toFixed(2) + '×'; save(); });
-$('#optWait').addEventListener('input', e => { S.waitSec = Math.min(6, Math.max(1.5, Number(e.target.value) || 3)); $('#waitVal').textContent = S.waitSec + '초'; save(); });
-$('#optWait').addEventListener('change', () => applyMode());
 $('#optKey').addEventListener('change', e => {
   S.apiKey = e.target.value.trim(); save(); apiClient = null;
   if (!IN_CLAUDE) blocked = S.apiKey ? '' : 'nokey';
@@ -1800,7 +1831,8 @@ $('#notesBtn').addEventListener('click', () => { renderNotes(); open('sheetNotes
 
 /* ---------- hands-free conversation (standalone page with a microphone) ---------- */
 const HF = (() => {
-  let on = false, phase = 'off', rec = null, heard = '', session = '', note = '';
+  let on = false, phase = 'off', rec = null, heard = '', session = '', note = '', askKo = false;
+  const koBtn = $('#koBtn');
   let silenceT = 0, restartT = 0, idleT = 0;
   const live = $('#live'), btn = $('#callBtn');
   const available = () => !IN_CLAUDE && !!SRClass;
@@ -1810,6 +1842,8 @@ const HF = (() => {
     btn.textContent = '';
     btn.append(icon(on ? 'stop' : 'mic', 22, on), el('span', '', on ? '대화 끝내기' : '대화 시작'));
     btn.disabled = !!blocked && !on;
+    koBtn.setAttribute('aria-pressed', askKo ? 'true' : 'false');
+    koBtn.disabled = !!blocked;
     $('#app').dataset.phase = on ? phase : 'off';
     live.textContent = ''; live.classList.remove('notice');
     if (!on || phase !== 'listening') {
@@ -1821,12 +1855,9 @@ const HF = (() => {
     live.hidden = false;
     const c = CH(), text = (heard + ' ' + session).trim();
     const st = el('div', 'ls');
-    st.append(el('i', 'dot'), el('span', '', text ? `말이 끝나면 ${S.waitSec}초 뒤에 보내요` : `듣고 있어요 — ${LANG_KO[c.lang]}로 말해 보세요`));
+    st.append(el('i', 'dot'), el('span', '', askKo ? '한국어로 듣고 있어요 — 모르는 표현을 물어보세요' : `듣고 있어요 — ${LANG_KO[c.lang]}로 말해 보세요`));
     live.append(st);
-    if (text) {
-      const t = el('div', 'lt', text); t.lang = c.lang; live.append(t);
-      const bar = el('div', 'bar'); bar.append(el('i')); live.style.setProperty('--wait', S.waitSec + 's'); live.append(bar);
-    }
+    if (text) { const t = el('div', 'lt', text); t.lang = askKo ? 'ko' : c.lang; live.append(t); }
     const bx = $('#convoList'); bx.scrollTop = bx.scrollHeight;
   }
   function setPhase(p) { phase = p; render(); }
@@ -1844,13 +1875,15 @@ const HF = (() => {
     let r;
     try { r = new SRClass(); } catch (e) { fail('start'); return; }
     rec = r;
-    r.lang = ttsLang(CH().lang); r.continuous = false; r.interimResults = true; r.maxAlternatives = 1;
+    r.lang = askKo ? 'ko-KR' : ttsLang(CH().lang); r.continuous = false; r.interimResults = true; r.maxAlternatives = 1;
     r.onresult = e => {
       if (rec !== r) return;
-      let t = '';
-      for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      let t = '', fin = false;
+      for (let i = 0; i < e.results.length; i++) { t += e.results[i][0].transcript; if (e.results[i].isFinal) fin = true; }
       session = t.trim();
-      armSilence(); render();
+      clearTimeout(idleT);
+      render();
+      if (fin && (heard + ' ' + session).trim()) { clearTimeout(silenceT); silenceT = setTimeout(finish, 150); }
     };
     r.onerror = e => { if (rec === r && (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture')) fail(e.error); };
     r.onend = () => {
@@ -1861,10 +1894,6 @@ const HF = (() => {
     };
     try { r.start(); } catch (e) { fail('start'); }
   }
-  function armSilence() {
-    clearTimeout(silenceT); clearTimeout(idleT);
-    if ((heard + session).trim()) silenceT = setTimeout(finish, S.waitSec * 1000);
-  }
   function armIdle() {
     clearTimeout(idleT);
     idleT = setTimeout(() => { if (on && phase === 'listening' && !(heard + session).trim()) { stop(); note = '한동안 말이 없어서 대화를 멈췄어요. 다시 하려면 대화 시작을 누르세요.'; render(); } }, 90000);
@@ -1872,7 +1901,7 @@ const HF = (() => {
   function finish() {
     const text = (heard + ' ' + session).trim();
     if (!on || phase !== 'listening' || !text) return;
-    heard = ''; session = '';
+    heard = ''; session = ''; askKo = false;
     setPhase('thinking'); stopRec(); clearTimeout(idleT);
     send(text);
   }
@@ -1890,6 +1919,7 @@ const HF = (() => {
     if (blocked) { renderBanner(); return; }
     on = true; note = ''; heard = ''; session = '';
     TTS.unlock(); showHints(false);
+    if (askKo) { listen(); return; }
     const log = getLog(), last = log[log.length - 1];
     if (busy) { setPhase('thinking'); return; }
     if (last && last.who === 'me') { setPhase('thinking'); ask(); return; }
@@ -1900,8 +1930,15 @@ const HF = (() => {
     clearTimeout(silenceT); clearTimeout(restartT); clearTimeout(idleT);
     stopRec(); heard = ''; session = '';
     if (on) { on = false; TTS.stop(); AV.setTalking(false); }
-    phase = 'off'; render();
+    askKo = false; phase = 'off'; render();
   }
+  function toggleKo() {
+    askKo = !askKo;
+    if (!on) { if (askKo) start(); else render(); return; }
+    render();
+    if (phase === 'listening') { heard = ''; session = ''; startRec(); }
+  }
+  koBtn.addEventListener('click', toggleKo);
   btn.addEventListener('click', () => { if (on) { stop(); autoReport(); } else start(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && on) stop(); });
   return { available, render, start, stop, resume, hold, speaking, isOn: () => on, listening: () => on && phase === 'listening' };
@@ -1911,7 +1948,7 @@ const HF = (() => {
 const msg = $('#msg');
 function autosize() { msg.style.height = 'auto'; const h = msg.scrollHeight + 2; msg.style.height = Math.min(h, 124) + 'px'; msg.style.overflowY = h > 124 ? 'auto' : 'hidden'; }
 function armAutoSend() {
-  const AUTO_MS = S.waitSec * 1000;
+  const AUTO_MS = 1200;
   clearTimeout(autoT);
   const sb = $('#sendBtn'); sb.classList.remove('arming');
   if (S.mode !== 'call' || !S.autoSend || HF.available() || busy || blocked || !msg.value.trim()) return;
