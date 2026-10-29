@@ -1930,8 +1930,8 @@ const HF = (() => {
     const log = getLog(), last = log[log.length - 1];
     if (busy) { setPhase('thinking'); return; }
     if (last && last.who === 'me') { setPhase('thinking'); ask(); return; }
-    const t = lastThem();
-    if (t) { setPhase('speaking'); say(t.text, CH().lang, { onDone: resume }); } else listen();
+    TTS.stop(); AV.setTalking(false);
+    listen();
   }
   function stop() {
     clearTimeout(silenceT); clearTimeout(restartT); clearTimeout(idleT);
