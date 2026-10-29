@@ -1370,7 +1370,7 @@ function applyMode() {
   kb.setAttribute('aria-label', typing ? '말로 하기' : '글자로 입력'); kb.title = kb.getAttribute('aria-label');
   $('#msg').placeholder = hf ? (c.lang === 'en' ? '영어로 써 보세요' : '일본어로 써 보세요') : '눌러서 말하기';
   $('#tipText').textContent = hf && !typing
-    ? `대화 시작을 누르고 그냥 말하세요. 말이 끝나면 바로 ${c.k}가 대답해요. 막히면 '가'를 누르고 한국어로 물어보세요.`
+    ? `대화 시작을 누르고 그냥 말하세요. 말이 끝나면 바로 ${c.k}가 대답해요. 막히면 "Korean"이라고 말하거나 '가'를 누르고 한국어로 물어보세요.`
     : hf ? '글자로 쓰고 보내기를 누르세요. 마이크 버튼을 누르면 말하기로 돌아가요.'
     : '칸을 누르고 키보드의 마이크로 말하세요. 말을 멈추면 바로 보내요. 막히면 한국어로 물어봐도 돼요.';
   renderLog(); updateTurn();
@@ -1855,7 +1855,7 @@ const HF = (() => {
     live.hidden = false;
     const c = CH(), text = (heard + ' ' + session).trim();
     const st = el('div', 'ls');
-    st.append(el('i', 'dot'), el('span', '', askKo ? '한국어로 듣고 있어요 — 모르는 표현을 물어보세요' : `듣고 있어요 — ${LANG_KO[c.lang]}로 말해 보세요`));
+    st.append(el('i', 'dot'), el('span', '', askKo ? '한국어로 듣고 있어요 — 모르는 표현을 물어보세요' : `듣고 있어요 — ${LANG_KO[c.lang]}로 말해 보세요 · 막히면 "Korean"`));
     live.append(st);
     if (text) { const t = el('div', 'lt', text); t.lang = askKo ? 'ko' : c.lang; live.append(t); }
     const bx = $('#convoList'); bx.scrollTop = bx.scrollHeight;
@@ -1896,11 +1896,18 @@ const HF = (() => {
   }
   function armIdle() {
     clearTimeout(idleT);
-    idleT = setTimeout(() => { if (on && phase === 'listening' && !(heard + session).trim()) { stop(); note = '한동안 말이 없어서 대화를 멈췄어요. 다시 하려면 대화 시작을 누르세요.'; render(); } }, 90000);
+    idleT = setTimeout(() => { if (on && phase === 'listening' && !(heard + session).trim()) { stop(); note = '5분 동안 말이 없어서 대화를 멈췄어요. 다시 하려면 대화 시작을 누르세요.'; render(); } }, 300000);
   }
+  const HELP_RE = /^(?:korean|in korean|korean please|help|help me|hangul|한국어|한국말|도와줘|コリアン|韓国語|ヘルプ|助けて)[\s.!?。！？]*$/i;
   function finish() {
     const text = (heard + ' ' + session).trim();
     if (!on || phase !== 'listening' || !text) return;
+    if (!askKo && HELP_RE.test(text)) {
+      heard = ''; session = ''; askKo = true;
+      stopRec(); setPhase('speaking');
+      say('네, 한국어로 물어보세요.', 'ko', { onDone: () => { if (on) listen(); } });
+      return;
+    }
     heard = ''; session = ''; askKo = false;
     setPhase('thinking'); stopRec(); clearTimeout(idleT);
     send(text);
@@ -1918,7 +1925,7 @@ const HF = (() => {
     if (on || !available()) return;
     if (blocked) { renderBanner(); return; }
     on = true; note = ''; heard = ''; session = '';
-    TTS.unlock(); showHints(false);
+    TTS.unlock(); showHints(false); keepAwake(true);
     if (askKo) { listen(); return; }
     const log = getLog(), last = log[log.length - 1];
     if (busy) { setPhase('thinking'); return; }
@@ -1930,7 +1937,14 @@ const HF = (() => {
     clearTimeout(silenceT); clearTimeout(restartT); clearTimeout(idleT);
     stopRec(); heard = ''; session = '';
     if (on) { on = false; TTS.stop(); AV.setTalking(false); }
-    askKo = false; phase = 'off'; render();
+    askKo = false; phase = 'off'; render(); keepAwake(false);
+  }
+  let wake = null;
+  async function keepAwake(want) {
+    try {
+      if (want && !wake && 'wakeLock' in navigator) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); }
+      else if (!want && wake) { const w = wake; wake = null; await w.release(); }
+    } catch (e) { /* not allowed here: the screen may still turn off */ }
   }
   function toggleKo() {
     askKo = !askKo;
@@ -1940,7 +1954,9 @@ const HF = (() => {
   }
   koBtn.addEventListener('click', toggleKo);
   btn.addEventListener('click', () => { if (on) { stop(); autoReport(); } else start(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && on) stop(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && on) { stop(); note = '화면을 다른 앱으로 바꿔서 대화를 멈췄어요. 다시 하려면 대화 시작을 누르세요.'; render(); }
+  });
   return { available, render, start, stop, resume, hold, speaking, isOn: () => on, listening: () => on && phase === 'listening' };
 })();
 
