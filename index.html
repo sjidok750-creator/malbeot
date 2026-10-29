@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eef1f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>html{box-sizing:border-box;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>말벗 회화</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Jua&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen phone app — slim header, video-call style character stage, scene strip, chat log, composer pinned to the bottom. */
+:root{
+  --bg:#eef1f6; --surface:#ffffff; --surface-2:#f5f7fb; --ink:#172031; --muted:#5a6476; --line:#d8dde7;
+  --me:#2b5ce6; --me-ink:#ffffff; --chip:#e3e8f1; --chip-ink:#2a3446; --chip-on:#172031; --chip-on-ink:#ffffff;
+  --fix-bg:#fff3d4; --fix-ink:#5a3e00; --fix-line:#ead08c; --focus:#2b5ce6; --scrim:rgba(9,13,21,.46);
+  --go:#1f9d55; --stop:#d64545;
+  --display:"Jua","Zen Maru Gothic",system-ui,sans-serif;
+  --body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --ja:"Zen Maru Gothic","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1118; --surface:#161c27; --surface-2:#1c2330; --ink:#e6eaf1; --muted:#9aa3b3; --line:#283041;
+  --me:#3f6ef0; --me-ink:#ffffff; --chip:#222a38; --chip-ink:#d5dbe6; --chip-on:#e6eaf1; --chip-on-ink:#111722;
+  --fix-bg:#33290f; --fix-ink:#f3d58c; --fix-line:#5a4818; --focus:#86a6ff; --scrim:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1118; --surface:#161c27; --surface-2:#1c2330; --ink:#e6eaf1; --muted:#9aa3b3; --line:#283041;
+  --me:#3f6ef0; --me-ink:#ffffff; --chip:#222a38; --chip-ink:#d5dbe6; --chip-on:#e6eaf1; --chip-on-ink:#111722;
+  --fix-bg:#33290f; --fix-ink:#f3d58c; --fix-line:#5a4818; --focus:#86a6ff; --scrim:rgba(0,0,0,.6); color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;overflow:hidden}
+:lang(ja){font-family:var(--ja)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
+@media (min-width:600px){.app{border-inline:1px solid var(--line)}}
+
+/* header */
+.top{display:flex;align-items:center;gap:8px;padding:10px 16px 8px}
+.who{display:flex;align-items:center;gap:10px;min-width:0;flex:1;background:none;border:0;padding:4px 6px 4px 0;text-align:left;border-radius:14px}
+.thumb{width:40px;height:40px;border-radius:50%;flex:none;overflow:hidden;background:linear-gradient(160deg,var(--a,#ddd),var(--b,#bbb))}
+.thumb svg{width:100%;height:100%;display:block}
+.thumb img{width:100%;height:100%;display:block;object-fit:cover;object-position:50% 45%;transform:scale(1.7);transform-origin:49% 47%}
+.who-text{display:flex;flex-direction:column;min-width:0}
+.who-name{font-family:var(--display);font-size:19px;line-height:1.15}
+.who-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.caret{color:var(--muted);display:flex}
+.top-actions{display:flex;align-items:center;gap:4px;flex:none}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:500}
+.iconbtn{position:relative;width:38px;height:38px;border-radius:50%;border:0;background:none;display:grid;place-items:center;color:var(--ink)}
+.iconbtn.soft{background:var(--chip);color:var(--chip-ink);flex:none;width:42px;height:42px}
+.iconbtn.soft[aria-expanded="true"]{background:var(--chip-on);color:var(--chip-on-ink)}
+.badge{position:absolute;top:3px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--me);color:var(--me-ink);font-size:10.5px;line-height:17px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums}
+
+/* stage */
+.stage{position:relative;margin:0 16px;border-radius:24px;overflow:hidden;height:clamp(170px,34dvh,330px);flex:none;
+  background:radial-gradient(120% 90% at 50% 18%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%),linear-gradient(165deg,var(--a),var(--b))}
+.stage-av{position:absolute;inset:6% 0 0 0;display:flex;justify-content:center}
+.stage-av svg{height:100%;width:auto;display:block}
+.stage-av.is-photo{inset:0}
+.stage-av.is-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;transform-origin:50% 45%;animation:breathe 7s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+.stage.speaking .stage-av.is-photo img{animation:talk .42s ease-in-out infinite alternate}
+@keyframes talk{from{transform:scale(1.01) translateY(0)}to{transform:scale(1.03) translateY(-1.5px)}}
+.stage.thinking .stage-av.is-photo img{filter:saturate(.85) brightness(.96)}
+.stage::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 0 rgba(255,255,255,0);transition:box-shadow .3s}
+.stage.speaking::after{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85),inset 0 0 28px rgba(255,255,255,.35)}
+.tag{position:absolute;font-size:12px;border-radius:999px;padding:4px 10px;background:rgba(12,16,26,.58);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.tag-lang{top:12px;left:12px}
+.tag-status{top:12px;right:12px;display:flex;align-items:center;gap:6px}
+.tag-name{left:12px;bottom:12px;font-size:13px;font-weight:500}
+.tag-name b{font-family:var(--display);font-weight:400;font-size:15px}
+.wave{display:inline-flex;gap:2px;align-items:center;height:12px}
+.wave i{width:3px;height:100%;border-radius:2px;background:#fff;animation:wave .9s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.15s}.wave i:nth-child(3){animation-delay:.3s}
+@keyframes wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.tag-status[data-s="think"] .wave i{height:4px;border-radius:50%;width:4px;animation:hop 1s ease-in-out infinite}
+.tag-status[data-s="think"] .wave i:nth-child(2){animation-delay:.15s}.tag-status[data-s="think"] .wave i:nth-child(3){animation-delay:.3s}
+@keyframes hop{0%,100%{transform:translateY(2px);opacity:.5}50%{transform:translateY(-2px);opacity:1}}
+
+/* scenes */
+.scenes{display:flex;gap:8px;overflow-x:auto;padding:10px 16px 6px;scrollbar-width:none;flex:none}
+.scenes::-webkit-scrollbar{display:none}
+.scene{flex:none;border:0;border-radius:999px;padding:6px 13px;background:var(--chip);color:var(--chip-ink);font-size:13.5px;white-space:nowrap}
+.scene[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);font-weight:500}
+
+/* log */
+.log{flex:1;min-height:0;overflow-y:auto;padding:6px 16px 14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.log-intro{align-self:center;font-size:12px;color:var(--muted);margin:2px 0 0}
+.msg{max-width:88%;min-width:0;overflow-wrap:anywhere}
+.them{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:18px 18px 18px 6px;padding:10px 12px 6px}
+.t{font-size:17px;line-height:1.6}
+.t:lang(ja){line-height:1.9}
+ruby{ruby-align:center}
+ruby rt{font-size:.52em;color:var(--muted);font-weight:500}
+.reading{font-size:13px;color:var(--muted);margin-top:2px}
+.ko{font-size:13.5px;color:var(--muted);margin-top:4px}
+.acts{display:flex;align-items:center;gap:2px;margin:6px -6px 0}
+.act{height:32px;min-width:32px;padding:0 7px;border:0;border-radius:16px;background:none;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.act:hover{background:var(--surface-2);color:var(--ink)}
+.act[aria-pressed="true"]{color:var(--me)}
+.vocab{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.vchip{display:inline-flex;align-items:stretch;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;max-width:100%}
+.vchip button{border:0;background:none;padding:4px 8px;font-size:13px;text-align:left;min-width:0}
+.vchip .vw{font-weight:600}
+.vchip .vr{color:var(--muted);font-size:11.5px;margin-left:4px}
+.vchip .vk{color:var(--muted);margin-left:6px}
+.vchip .vs{border-left:1px solid var(--line);color:var(--muted);display:grid;place-items:center;padding:0 7px}
+.vchip .vs[aria-pressed="true"]{color:var(--me)}
+.me-wrap{align-self:flex-end;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:88%;min-width:0}
+.me{background:var(--me);color:var(--me-ink);border-radius:18px 18px 6px 18px;padding:9px 13px;font-size:16px;overflow-wrap:anywhere;white-space:pre-wrap}
+.fix{background:var(--fix-bg);color:var(--fix-ink);border:1px solid var(--fix-line);border-radius:14px;padding:8px 12px 4px;font-size:14px;min-width:0;max-width:100%}
+.fix-label{font-size:11.5px;font-weight:600;letter-spacing:.04em}
+.fix-better{font-size:16px;font-weight:500;line-height:1.55;margin-top:2px}
+.fix-why{font-size:13px;margin-top:3px;opacity:.9}
+.fix .act{color:inherit;opacity:.8}
+.fix .act[aria-pressed="true"]{opacity:1}
+.pending{display:flex;gap:5px;padding:14px 14px}
+.pending i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:hop 1s ease-in-out infinite}
+.pending i:nth-child(2){animation-delay:.15s}.pending i:nth-child(3){animation-delay:.3s}
+.note{align-self:center;text-align:center;font-size:13px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:6px;max-width:92%}
+.note-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:500}
+.btn.primary{background:var(--chip-on);color:var(--chip-on-ink);border-color:transparent}
+
+/* bottom */
+.hints{display:flex;gap:8px;overflow-x:auto;padding:8px 16px;flex:none;border-top:1px solid var(--line);background:var(--surface-2);scrollbar-width:none}
+.hint{flex:none;max-width:78%;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:6px 11px;text-align:left;display:flex;flex-direction:column}
+.hint .ht{font-size:14.5px;font-weight:500;white-space:normal}
+.hint .hr{font-size:11.5px;color:var(--muted)}
+.hint .hk{font-size:12px;color:var(--muted)}
+.banner{flex:none;margin:0 16px 8px;padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:13px;color:var(--ink)}
+.foot{flex:none;background:var(--surface);border-top:1px solid var(--line)}
+.composer{display:flex;align-items:flex-end;gap:8px;padding:8px 16px}
+.composer textarea{box-sizing:border-box;flex:1;min-width:0;resize:none;border:1px solid var(--line);border-radius:21px;padding:9px 14px;font-size:16px;line-height:1.4;max-height:124px;overflow-y:hidden;background:var(--surface-2);color:var(--ink)}
+.composer textarea::placeholder{color:var(--muted)}
+.sendbtn{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--me);color:var(--me-ink);display:grid;place-items:center}
+.sendbtn:disabled{opacity:.4;cursor:default}
+.sendbtn[data-busy="true"]{background:var(--chip-on);color:var(--chip-on-ink)}
+.tip{margin:0;padding:0 16px 8px;font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start}
+.tip svg{flex:none;margin-top:1px}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;z-index:21;background:var(--surface);color:var(--ink);
+  border-radius:22px 22px 0 0;padding:6px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:82%;overflow-y:auto;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);padding:10px 0 6px;z-index:1}
+.sheet-head h2{margin:0;font-family:var(--display);font-weight:400;font-size:21px}
+.grp{margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:16px;padding:10px;text-align:left;min-width:0}
+.card[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.card .cav{width:100%;aspect-ratio:4/3;max-width:100%;border-radius:12px;overflow:hidden;background:linear-gradient(165deg,var(--a),var(--b));display:flex;justify-content:center;align-items:flex-end}
+.card .cav svg{height:100%;width:auto}
+.card .cav img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
+.card .cn{font-family:var(--display);font-size:18px;line-height:1.1}
+.card .cs{font-size:12px;color:var(--muted)}
+.card .cd{font-size:12.5px;line-height:1.45}
+.field{padding:12px 0;border-top:1px solid var(--line)}
+.field:first-of-type{border-top:0}
+.flabel{display:block;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;margin-bottom:8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.seg button b{font-size:14.5px}
+.seg button small{font-size:11px;color:var(--muted)}
+.seg button[aria-checked="true"],.seg button[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:transparent}
+.seg button[aria-checked="true"] small,.seg button[aria-pressed="true"] small{color:inherit;opacity:.75}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;font-size:14.5px}
+.row small{color:var(--muted);font-size:12px;margin-left:4px}
+.row input[type=checkbox]{width:20px;height:20px;accent-color:var(--me);flex:none}
+.row.col{flex-direction:column;align-items:stretch;gap:6px}
+.row.col span{display:flex;justify-content:space-between}
+.row input[type=range]{width:100%;accent-color:var(--me)}
+.fhint{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+.wide{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px;font-size:14px;font-weight:500}
+.wide.danger{color:#c03b3b}
+.notes{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column}
+.notes li{display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.notes .nt{flex:1;min-width:0}
+.notes .nx{font-size:16px;font-weight:500;overflow-wrap:anywhere}
+.notes .nr,.notes .nk{font-size:12.5px;color:var(--muted)}
+.empty{font-size:13.5px;color:var(--muted);text-align:center;padding:18px 8px;margin:0}
+
+/* call mode */
+.modeseg{display:flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px}
+.modeseg button{width:34px;height:30px;border:0;border-radius:999px;background:none;color:var(--chip-ink);display:grid;place-items:center}
+.modeseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.subtitle{display:none}
+.app.call .subtitle{display:flex;flex-direction:column;gap:2px;position:absolute;left:12px;right:12px;bottom:12px;max-height:58%;overflow-y:auto;background:rgba(10,14,22,.64);color:#fff;border-radius:16px;padding:10px 12px 4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:opacity .2s}
+.app.call .stage.thinking .subtitle{opacity:.55}
+.subtitle .st{font-size:18px;line-height:1.55}
+.subtitle .st:lang(ja){line-height:1.9}
+.subtitle rt{color:rgba(255,255,255,.78)}
+.subtitle .sk{font-size:13.5px;color:rgba(255,255,255,.82)}
+.subtitle .acts{margin:4px -6px 0}
+.subtitle .act{color:rgba(255,255,255,.85)}
+.subtitle .act:hover{background:rgba(255,255,255,.12);color:#fff}
+.subtitle .act[aria-pressed="true"]{color:#ffd166}
+.app.call .stage{flex:1 1 auto;height:auto;min-height:220px}
+.app.call .log,.app.call .tag-name{display:none}
+.myline{display:none}
+.app.call .myline{display:flex;flex-direction:column;gap:6px;padding:8px 16px 6px;flex:none;max-height:38%;overflow-y:auto}
+.app.call .myline:empty{display:none}
+.myline .me-wrap{max-width:92%}
+.myline .note{align-self:center}
+.composer textarea.yourturn{border-color:var(--me);animation:ping 1.6s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(63,110,240,.45)}100%{box-shadow:0 0 0 10px rgba(63,110,240,0)}}
+.sendbtn{position:relative}
+.sendbtn.arming::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:3px solid var(--me);animation:arm var(--arm,1.8s) linear forwards}
+@keyframes arm{from{transform:scale(.7);opacity:.1}to{transform:scale(1);opacity:.95}}
+/* hands-free (standalone page) */
+.callbtn{display:none;flex:1;min-width:0;height:46px;border:0;border-radius:23px;background:var(--go);color:#fff;font-weight:600;font-size:16px;align-items:center;justify-content:center;gap:8px}
+.callbtn[data-on="true"]{background:var(--stop)}
+.callbtn:disabled{opacity:.45;cursor:default}
+.app.handsfree .callbtn{display:flex}
+.app.handsfree #msg,.app.handsfree #sendBtn{display:none}
+.live{flex:none;margin:0 16px 8px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.live .lt{font-size:16px;line-height:1.5;overflow-wrap:anywhere}
+.live .ls{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.live .dot{width:9px;height:9px;border-radius:50%;background:var(--stop);animation:blink 1.2s ease-in-out infinite;flex:none}
+@keyframes blink{50%{opacity:.25}}
+.live .bar{height:4px;border-radius:2px;background:var(--chip);overflow:hidden}
+.live .bar i{display:block;height:100%;width:100%;background:var(--me);transform-origin:left;animation:fill var(--wait,3s) linear forwards}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.row.col input[type=password],.row.col select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface-2);color:var(--ink);font-size:15px}
+@media (max-height:620px){.stage{height:120px}.scenes{padding-top:6px}}
+@media (prefers-reduced-motion:reduce){.wave i,.pending i,.tag-status[data-s="think"] .wave i,.stage-av.is-photo img,.stage.speaking .stage-av.is-photo img,.composer textarea.yourturn,.live .dot{animation:none}}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <button class="who" id="whoBtn" type="button" aria-haspopup="dialog" aria-label="캐릭터 바꾸기">
+      <span class="thumb" id="whoThumb"></span>
+      <span class="who-text"><span class="who-name" id="whoName">Mia</span><span class="who-sub" id="whoSub">시애틀 · 바리스타</span></span>
+      <span class="caret" id="whoCaret"></span>
+    </button>
+    <div class="top-actions">
+      <div class="modeseg" role="group" aria-label="보기 방식"><button type="button" id="modeCall" aria-label="통화 모드" title="통화 모드"></button><button type="button" id="modeChat" aria-label="채팅 모드" title="채팅 모드"></button></div>
+      <button class="iconbtn" id="notesBtn" type="button" aria-label="표현 노트"><span class="badge" id="notesBadge" hidden></span></button>
+      <button class="iconbtn" id="setBtn" type="button" aria-label="설정"></button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage" aria-label="대화 상대">
+    <div class="stage-av" id="stageAv"></div>
+    <span class="tag tag-lang" id="tagLang">English · 초급</span>
+    <span class="tag tag-status" id="tagStatus" hidden><span class="wave"><i></i><i></i><i></i></span><span id="tagStatusText"></span></span>
+    <span class="tag tag-name" id="tagName"></span>
+    <div class="subtitle" id="subtitle" aria-live="polite"></div>
+  </section>
+
+  <nav class="scenes" id="scenes" aria-label="대화 상황"></nav>
+
+  <main class="log" id="log" aria-live="polite"></main>
+  <div class="myline" id="myline"></div>
+  <div class="live" id="live" aria-live="polite" hidden></div>
+
+  <div class="hints" id="hints" hidden></div>
+  <div class="banner" id="banner" hidden></div>
+  <div class="foot">
+    <form class="composer" id="composer">
+      <button class="iconbtn soft" id="hintBtn" type="button" aria-label="힌트 보기" aria-expanded="false"></button>
+      <textarea id="msg" rows="1" enterkeyhint="send" autocomplete="off" autocapitalize="sentences" aria-label="보낼 말"></textarea>
+      <button class="sendbtn" id="sendBtn" type="submit" aria-label="보내기"></button>
+      <button class="callbtn" id="callBtn" type="button"></button>
+    </form>
+    <p class="tip" id="tip"></p>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="sheetChars" role="dialog" aria-modal="true" aria-labelledby="hChars" hidden>
+  <div class="sheet-head"><h2 id="hChars">누구와 이야기할까요?</h2><button class="iconbtn" type="button" data-close aria-label="닫기"></button></div>
+  <div id="charGroups"></div>
+</section>
+
+<section class="sheet" id="sheetSet" role="dialog" aria-modal="true" aria-labelledby="hSet" hidden>
+  <div class="sheet-head"><h2 id="hSet">설정</h2><button class="iconbtn" type="button" data-close aria-label="닫기"></button></div>
+  <div class="field"><span class="flabel">레벨</span><div class="seg" id="levelSeg" role="radiogroup" aria-label="레벨"></div><p class="fhint" id="levelHint"></p></div>
+  <div class="field"><span class="flabel">표시</span>
+    <label class="row"><span>한국어 해석 보기</span><input type="checkbox" id="optKo"></label>
+    <label class="row"><span>후리가나 보기<small>일본어</small></span><input type="checkbox" id="optReading"></label>
+  </div>
+  <div class="field"><span class="flabel">음성</span>
+    <label class="row"><span>답장 자동으로 읽기<small>채팅 모드</small></span><input type="checkbox" id="optAuto"></label>
+    <label class="row"><span>말을 멈추면 자동으로 보내기<small>통화 모드</small></span><input type="checkbox" id="optAutoSend"></label>
+    <label class="row col"><span><span>읽기 속도</span><b id="rateVal"></b></span><input type="range" id="optRate" min="0.6" max="1.2" step="0.05"></label>
+    <label class="row col"><span><span>말이 끝나고 기다리는 시간</span><b id="waitVal"></b></span><input type="range" id="optWait" min="1.5" max="6" step="0.5"></label>
+    <p class="fhint" id="voiceNote"></p>
+  </div>
+  <div class="field" id="apiField" hidden><span class="flabel">Claude 연결 · 이 휴대폰에만 저장</span>
+    <label class="row col"><span>API 키</span><input type="password" id="optKey" autocomplete="off" spellcheck="false" placeholder="sk-ant- 로 시작하는 키"></label>
+    <label class="row col"><span>모델</span><select id="optModel"></select></label>
+    <p class="fhint" id="keyNote"></p>
+  </div>
+  <div class="field"><button class="wide danger" id="resetBtn" type="button">이 대화 처음부터 다시</button></div>
+</section>
+
+<section class="sheet" id="sheetNotes" role="dialog" aria-modal="true" aria-labelledby="hNotes" hidden>
+  <div class="sheet-head"><h2 id="hNotes">표현 노트</h2><button class="iconbtn" type="button" data-close aria-label="닫기"></button></div>
+  <div class="seg" id="notesTabs" aria-label="언어"></div>
+  <ul class="notes" id="notesList"></ul>
+  <p class="empty" id="notesEmpty">말풍선의 책갈피 버튼이나 단어 칩의 + 를 누르면 여기에 모여요.</p>
+  <p class="fhint">노트와 대화 기록은 이 기기의 브라우저에만 저장돼요.</p>
+</section>
+
+<script>
+(() => {
+'use strict';
+document.documentElement.lang = 'ko';
+const $ = (s, r = document) => r.querySelector(s);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+const NS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const IN_CLAUDE = !!(window.claude && typeof window.claude.use === 'function');
+const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+/* ---------- icons ---------- */
+const ICON = {
+  speaker: ['M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z', 'M15.5 9a4 4 0 0 1 0 6', 'M18 6.5a7.5 7.5 0 0 1 0 11'],
+  bookmark: ['M7 4h10v16l-5-3.6L7 20z'],
+  plus: ['M12 6v12', 'M6 12h12'],
+  check: ['M6 12.5l4 4 8-9'],
+  send: ['M5 12h13', 'M13 6l6 6-6 6'],
+  stop: ['M8 8h8v8H8z'],
+  bulb: ['M9.5 18h5', 'M10.5 21h3', 'M12 3a6 6 0 0 0-3.5 10.9c.6.5.9 1.1.9 1.9V16h5.2v-.2c0-.8.3-1.4.9-1.9A6 6 0 0 0 12 3z'],
+  sliders: ['M4 7h9', 'M19 7h1', 'M4 17h3', 'M13 17h7', 'M16 4.5v5', 'M10 14.5v5'],
+  book: ['M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5z', 'M5 20.5A2.5 2.5 0 0 1 7.5 18H19v3H7.5'],
+  caret: ['M7 10l5 5 5-5'],
+  close: ['M6 6l12 12', 'M18 6L6 18'],
+  trash: ['M5 7h14', 'M10 7V4.5h4V7', 'M7 7l1 13h8l1-13'],
+  phone: ['M6.5 3.5h3l1.5 4.5-2 1.2a11 11 0 0 0 5.8 5.8l1.2-2 4.5 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z'],
+  chat: ['M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-5 4z'],
+  mic: ['M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z', 'M6 11a6 6 0 0 0 12 0', 'M12 17v3.5'],
+};
+function icon(name, size = 20, filled = false) {
+  const s = sv('svg', { viewBox: '0 0 24 24', width: size, height: size, 'aria-hidden': 'true', fill: filled ? 'currentColor' : 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  for (const d of ICON[name]) sv('path', { d }, s);
+  return s;
+}
+
+/* ---------- content ---------- */
+const YUNA_LOOK = { photo: 'yuna.jpg', a: '#dfe6dc', b: '#9fb3a0' };
+const YUNA_PERSONA = 'Yuna, 25, a cheerful marketer who grew up between Seoul and Tokyo. Loves music (she always has her earphones in), cafés and evening walks by the river. Warm, upbeat and a good listener.';
+const CHARS = {
+  yuna: { lang: 'en', name: 'Yuna', n: 'Yuna', k: '유나', sub: '서울·도쿄 · 마케터', desc: '이어폰을 늘 끼고 다니는 밝은 직장인. 영어로 수다 떨어요.', tts: 'en-US', pitch: 1.08,
+    persona: YUNA_PERSONA + ' Natural, casual English.', look: YUNA_LOOK },
+  yunaja: { lang: 'ja', name: 'ユナ', n: 'ユナ', k: '유나', sub: '서울·도쿄 · 마케터', desc: '이어폰을 늘 끼고 다니는 밝은 직장인. 일본어로 수다 떨어요.', tts: 'ja-JP', pitch: 1.08,
+    persona: 'Yuna (ユナ): ' + YUNA_PERSONA + ' Natural, friendly Japanese; follow the level rule on politeness.', look: YUNA_LOOK },
+  mia: { lang: 'en', name: 'Mia', n: 'Mia', k: '미아', sub: '시애틀 · 바리스타', desc: '등산과 K드라마를 좋아하는 수다쟁이. 캐주얼한 미국 영어.', tts: 'en-US', pitch: 1.1,
+    persona: 'Mia, 26, a cheerful barista in Seattle who loves hiking, coffee and K-dramas. Friendly, casual American English.',
+    look: { skin: '#f3cfb3', shade: '#dfa985', hair: '#8a3f1f', hairDark: '#5e2a14', style: 'long', eye: '#4c7a5a', top: '#2d6a6f', a: '#ffe1c4', b: '#f3a77f', acc: 'freckles' } },
+  oliver: { lang: 'en', name: 'Oliver', n: 'Oliver', k: '올리버', sub: '런던 · 여행 가이드', desc: '차분하고 농담을 잘하는 런던 가이드. 영국식 영어.', tts: 'en-GB', pitch: 0.9,
+    persona: 'Oliver, 38, a calm and witty tour guide from London. British English spelling and expressions.',
+    look: { skin: '#f0c6a4', shade: '#d6a17c', hair: '#5a3d2b', hairDark: '#3b271b', style: 'short', eye: '#3b5f8a', top: '#34476a', a: '#dbe7f5', b: '#9fbbe0', acc: 'glasses' } },
+  hana: { lang: 'ja', name: 'はな', n: 'はな', k: '하나', sub: '도쿄 · 대학생', desc: '카페와 애니, 사진을 좋아하는 대학생. 친절한 존댓말.', tts: 'ja-JP', pitch: 1.15,
+    persona: 'Hana (はな), 21, a university student in Tokyo who loves cafés, anime and taking photos. Kind and friendly; polite Japanese (です/ます).',
+    look: { skin: '#f6d6bd', shade: '#e4b48f', hair: '#2a2230', hairDark: '#140f17', style: 'bob', eye: '#4a3426', top: '#c2506c', a: '#fde2ea', b: '#f2a6bb', acc: 'clip' } },
+  kenji: { lang: 'ja', name: 'けんじ', n: 'けんじ', k: '켄지', sub: '오사카 · 회사원', desc: '오사카 상사에 다니는 회사원. 정중하지만 농담을 잘해요.', tts: 'ja-JP', pitch: 0.9,
+    persona: 'Kenji (けんじ), 34, an office worker at a trading company in Osaka. Kind and a little funny; polite Japanese, and a light Kansai word only with advanced learners.',
+    look: { skin: '#e9c09d', shade: '#cf9b75', hair: '#2a2523', hairDark: '#171311', style: 'part', eye: '#3a2a20', top: '#3a4656', a: '#e2efd8', b: '#acc995', acc: 'tie' } },
+};
+const CHAR_GROUPS = [['YUNA · 유나', ['yuna', 'yunaja']], ['ENGLISH · 영어', ['mia', 'oliver']], ['日本語 · 일본어', ['hana', 'kenji']]];
+
+// en: t / ko / h[[text, ko]]   ja: r[[base, reading]] / ko / h[[text, reading, ko]]
+const SCENES = [
+  { id: 'free', ko: '자유 대화', role: 'Casual small talk. Ask about the learner\'s day, plans and interests.',
+    en: { t: 'Hi, I\'m {n}! How\'s your day going so far?', ko: '안녕하세요, {k}예요! 오늘 하루 어때요?',
+      h: [['It\'s going well, thanks! How about you?', '잘 지내고 있어요, 고마워요! 당신은요?'], ['I\'m a little tired today.', '오늘은 조금 피곤해요.']] },
+    ja: { r: [['こんにちは、{n}です。', ''], ['今日', 'きょう'], ['の', ''], ['調子', 'ちょうし'], ['はどうですか？', '']], ko: '안녕하세요, {k}예요. 오늘 컨디션은 어때요?',
+      h: [['元気です。{n}さんは？', 'げんきです。{n}さんは？', '잘 지내요. {k} 씨는요?'], ['ちょっと疲れています。', 'ちょっとつかれています。', '조금 피곤해요.']] } },
+  { id: 'intro', ko: '자기소개', role: 'First meeting. Get to know each other: name, job or studies, hometown, hobbies.',
+    en: { t: 'Nice to meet you! I\'m {n}. Could you tell me a little about yourself?', ko: '만나서 반가워요! 저는 {k}예요. 자기소개를 조금 해 줄래요?',
+      h: [['Nice to meet you too. I\'m from Seoul.', '저도 반가워요. 서울에서 왔어요.'], ['I work as an engineer.', '엔지니어로 일해요.']] },
+    ja: { r: [['はじめまして、{n}です。', ''], ['自己紹介', 'じこしょうかい'], ['をお', ''], ['願', 'ねが'], ['いできますか？', '']], ko: '처음 뵙겠습니다, {k}예요. 자기소개 부탁드려도 될까요?',
+      h: [['はじめまして。韓国から来ました。', 'はじめまして。かんこくからきました。', '처음 뵙겠습니다. 한국에서 왔어요.'], ['エンジニアをしています。', 'えんじにあをしています。', '엔지니어로 일하고 있어요.']] } },
+  { id: 'cafe', ko: '카페 주문', role: 'You work at a café and take the order; the learner is the customer. Ask about size, hot or iced, for here or to go, and payment.',
+    en: { t: 'Hi there, welcome in! What can I get for you today?', ko: '어서 오세요! 오늘은 뭘 드릴까요?',
+      h: [['Can I get an iced Americano, please?', '아이스 아메리카노 하나 주세요.'], ['What do you recommend?', '뭘 추천하세요?']] },
+    ja: { r: [['いらっしゃいませ！ご', ''], ['注文', 'ちゅうもん'], ['はお', ''], ['決', 'き'], ['まりですか？', '']], ko: '어서 오세요! 주문 정하셨나요?',
+      h: [['アイスコーヒーをください。', 'あいすこーひーをください。', '아이스커피 주세요.'], ['おすすめは何ですか？', 'おすすめはなんですか？', '추천 메뉴는 뭐예요?']] } },
+  { id: 'hotel', ko: '공항·호텔', role: 'You are the front-desk clerk at a hotel (or the airline check-in agent if the learner moves the talk to the airport). The learner is a traveller.',
+    en: { t: 'Good evening, welcome! Do you have a reservation with us?', ko: '안녕하세요, 어서 오세요! 예약하셨나요?',
+      h: [['Yes, I have a reservation under Kim.', '네, 김으로 예약했어요.'], ['What time is check-out?', '체크아웃은 몇 시예요?']] },
+    ja: { r: [['こんばんは。ホテルへようこそ。ご', ''], ['予約', 'よやく'], ['はされていますか？', '']], ko: '안녕하세요. 호텔에 오신 걸 환영합니다. 예약하셨나요?',
+      h: [['はい、キムで予約しています。', 'はい、きむでよやくしています。', '네, 김으로 예약했어요.'], ['チェックアウトは何時ですか？', 'ちぇっくあうとはなんじですか？', '체크아웃은 몇 시예요?']] } },
+  { id: 'road', ko: '길 묻기', role: 'You are a friendly local on the street. The learner is a lost tourist asking for directions; give simple directions with landmarks.',
+    en: { t: 'Hey, you look a little lost. Can I help you find something?', ko: '저기, 길을 잃으신 것 같은데요. 찾는 거 도와드릴까요?',
+      h: [['Yes, how do I get to the station?', '네, 역까지 어떻게 가요?'], ['Is there a convenience store near here?', '이 근처에 편의점 있어요?']] },
+    ja: { r: [['どうかしましたか？', ''], ['道', 'みち'], ['に', ''], ['迷', 'まよ'], ['いましたか？', '']], ko: '무슨 일 있으세요? 길을 잃으셨나요?',
+      h: [['駅はどこですか？', 'えきはどこですか？', '역은 어디예요?'], ['この近くにコンビニはありますか？', 'このちかくにこんびにはありますか？', '이 근처에 편의점 있어요?']] } },
+  { id: 'work', ko: '직장·회의', role: 'You are the learner\'s coworker. Chat before a meeting: schedules, tasks, deadlines, weekend plans.',
+    en: { t: 'Morning! Are you ready for the ten o\'clock meeting?', ko: '좋은 아침이에요! 10시 회의 준비됐어요?',
+      h: [['Almost. I just need to finish the slides.', '거의요. 슬라이드만 마무리하면 돼요.'], ['Could we push it back a little?', '조금 미룰 수 있을까요?']] },
+    ja: { r: [['おはようございます。', ''], ['十時', 'じゅうじ'], ['の', ''], ['会議', 'かいぎ'], ['の', ''], ['準備', 'じゅんび'], ['はできていますか？', '']], ko: '좋은 아침입니다. 10시 회의 준비는 되셨나요?',
+      h: [['はい、大丈夫です。', 'はい、だいじょうぶです。', '네, 괜찮아요.'], ['資料をもう少し確認します。', 'しりょうをもうすこしかくにんします。', '자료를 조금 더 확인할게요.']] } },
+  { id: 'interview', ko: '면접', role: 'You are a job interviewer. Ask one typical interview question at a time and react briefly to each answer.',
+    en: { t: 'Thanks for coming in today. To start, could you tell me about yourself?', ko: '오늘 와 주셔서 감사합니다. 먼저 자기소개 부탁드려요.',
+      h: [['Sure. I have five years of experience in my field.', '네. 제 분야에서 5년 경력이 있습니다.'], ['I\'m a hard worker and I enjoy solving problems.', '성실하고 문제 해결을 좋아합니다.']] },
+    ja: { r: [['本日', 'ほんじつ'], ['はお', ''], ['越', 'こ'], ['しいただきありがとうございます。まず、', ''], ['自己紹介', 'じこしょうかい'], ['をお', ''], ['願', 'ねが'], ['いします。', '']], ko: '오늘 와 주셔서 감사합니다. 먼저 자기소개 부탁드립니다.',
+      h: [['よろしくお願いします。', 'よろしくおねがいします。', '잘 부탁드립니다.'], ['前の会社で五年間働きました。', 'まえのかいしゃでごねんかんはたらきました。', '이전 회사에서 5년 일했습니다.']] } },
+];
+
+const LV = {
+  beg: { ko: '초급', tag: { en: 'CEFR A1–A2', ja: 'JLPT N5–N4' },
+    p: { en: 'Beginner (CEFR A1–A2). Use very common words and short, simple sentences (under about 12 words). 1–2 sentences per reply and only one simple question.',
+         ja: 'Beginner (JLPT N5–N4). Use polite です/ます form, very common words and basic kanji, short sentences. 1–2 sentences per reply and only one simple question.' },
+    fix: 'Fill "correction" only for clear mistakes in meaning or basic grammar; ignore small slips.' },
+  mid: { ko: '중급', tag: { en: 'CEFR B1', ja: 'JLPT N3' },
+    p: { en: 'Intermediate (CEFR B1). Natural everyday English, 2–3 sentences; now and then use a useful common expression.',
+         ja: 'Intermediate (JLPT N3). Natural polite Japanese, 2–3 sentences; now and then use a useful common expression.' },
+    fix: 'Fill "correction" for grammar mistakes and clearly unnatural wording.' },
+  adv: { ko: '고급', tag: { en: 'CEFR B2–C1', ja: 'JLPT N2–N1' },
+    p: { en: 'Advanced (CEFR B2–C1). Natural native-speed English with idioms and phrasal verbs, 2–4 sentences.',
+         ja: 'Advanced (JLPT N2–N1). Natural Japanese; match the learner\'s politeness (casual if they are casual), 2–4 sentences.' },
+    fix: 'Fill "correction" for mistakes and also when a more natural, native-like phrasing would sound noticeably better.' },
+};
+const MODELS = {
+  'claude-opus-5-5': 'Opus 5.5 — 가장 자연스러움(기본)',
+  'claude-sonnet-5-5': 'Sonnet 5.5 — 빠르고 똑똑함',
+  'claude-haiku-5-5': 'Haiku 5.5 — 가장 빠르고 저렴',
+};
+const LANG_KO = { en: '영어', ja: '일본어' };
+const LANG_LABEL = { en: 'English', ja: '日本語' };
+
+/* ---------- state ---------- */
+const KEY = 'malbeot.v1';
+const DEF = { char: 'yuna', scene: 'free', level: 'beg', showKo: true, showReading: true, auto: true, rate: 0.9, notes: [], logs: {}, notesTab: 'all', mode: 'call', autoSend: true, apiKey: '', model: 'claude-opus-5-5', waitSec: 3 };
+let S = (() => {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { raw = null; }
+  const s = Object.assign({}, DEF, raw && typeof raw === 'object' ? raw : {});
+  if (!s.yunaIntro) { s.char = 'yuna'; s.yunaIntro = true; }
+  if (!CHARS[s.char]) s.char = DEF.char;
+  if (!SCENES.some(x => x.id === s.scene)) s.scene = DEF.scene;
+  if (!LV[s.level]) s.level = DEF.level;
+  if (!Array.isArray(s.notes)) s.notes = [];
+  if (!s.logs || typeof s.logs !== 'object') s.logs = {};
+  s.rate = Math.min(1.2, Math.max(0.6, Number(s.rate) || DEF.rate));
+  s.waitSec = Math.min(6, Math.max(1.5, Number(s.waitSec) || DEF.waitSec));
+  if (typeof s.apiKey !== 'string') s.apiKey = '';
+  if (!MODELS[s.model]) s.model = DEF.model;
+  return s;
+})();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable: keep in memory */ } }
+const CH = () => CHARS[S.char];
+const SC = () => SCENES.find(x => x.id === S.scene);
+const logKey = () => S.char + ':' + S.scene;
+function sub(s, c) { return s.replace(/\{n\}/g, c.n).replace(/\{k\}/g, c.k); }
+function opener(c, sc) {
+  if (c.lang === 'en') {
+    const o = sc.en;
+    return { who: 'them', text: sub(o.t, c), ko: sub(o.ko, c), hints: o.h.map(h => ({ text: sub(h[0], c), reading: '', ko: sub(h[1], c) })), opener: true };
+  }
+  const o = sc.ja;
+  const ruby = o.r.map(([b, r]) => [sub(b, c), r]);
+  return { who: 'them', text: ruby.map(p => p[0]).join(''), ruby, reading: ruby.map(p => p[1] || p[0]).join(''), ko: sub(o.ko, c),
+    hints: o.h.map(h => ({ text: sub(h[0], c), reading: sub(h[1], c), ko: sub(h[2], c) })), opener: true };
+}
+function getLog(k = logKey()) {
+  if (!Array.isArray(S.logs[k]) || !S.logs[k].length) {
+    const [ci, si] = k.split(':');
+    S.logs[k] = [opener(CHARS[ci], SCENES.find(x => x.id === si))];
+  }
+  return S.logs[k];
+}
+
+/* ---------- avatar ---------- */
+const HEAD = 'M100 36 C128 36 150 56 151 92 C152 128 130 160 100 160 C70 160 48 128 49 92 C50 56 72 36 100 36 Z';
+const HAIR = {
+  long: { back: 'M100 24 C142 24 168 56 163 106 C160 142 167 178 174 216 L26 216 C33 178 40 142 37 106 C32 56 58 24 100 24 Z',
+    front: 'M47 100 C42 54 70 28 102 28 C136 28 160 54 153 100 C149 82 140 66 122 58 C106 72 84 80 60 80 C54 86 50 92 47 100 Z',
+    locks: ['M52 84 C40 124 42 170 54 214 L76 214 C64 168 61 124 64 96 Z', 'M148 84 C160 124 158 170 146 214 L124 214 C136 168 139 124 136 96 Z'] },
+  bob: { back: 'M100 26 C140 26 164 54 161 100 C159 128 161 148 157 162 C146 168 130 166 122 160 L78 160 C70 166 54 168 43 162 C39 148 41 128 39 100 C36 54 60 26 100 26 Z',
+    front: 'M48 100 C44 54 70 30 100 30 C130 30 156 54 152 100 C150 90 147 82 143 76 C122 82 78 82 57 76 C53 82 50 90 48 100 Z',
+    locks: ['M49 88 C44 112 45 142 50 160 L66 160 C61 140 59 114 62 92 Z', 'M151 88 C156 112 155 142 150 160 L134 160 C139 140 141 114 138 92 Z'] },
+  short: { back: 'M100 30 C134 30 156 52 154 94 L46 94 C44 52 66 30 100 30 Z',
+    front: 'M47 96 C43 52 70 27 102 27 C135 27 159 50 153 94 C151 80 145 69 136 63 C121 68 101 66 85 59 C74 68 61 74 53 82 C50 86 48 91 47 96 Z',
+    locks: ['M48 90 L49 112 L54 112 L56 92 Z', 'M152 90 L151 112 L146 112 L144 92 Z'] },
+  part: { back: 'M100 30 C134 30 156 52 154 94 L46 94 C44 52 66 30 100 30 Z',
+    front: 'M47 98 C42 52 72 26 104 26 C137 26 160 50 153 96 C150 82 144 72 134 66 C116 70 96 70 80 64 C70 70 58 78 52 86 C50 90 48 94 47 98 Z',
+    locks: ['M48 90 L49 112 L54 112 L56 92 Z', 'M152 90 L151 112 L146 112 L144 92 Z'], line: 'M84 33 C80 43 79 54 80 64' },
+};
+function mouthD(o, w) {
+  const x1 = (100 - 12 * w).toFixed(1), x2 = (100 + 12 * w).toFixed(1);
+  return `M${x1} 135 Q100 ${(139 - o * 2).toFixed(1)} ${x2} 135 Q100 ${(143 + o * 11).toFixed(1)} ${x1} 135 Z`;
+}
+let AVN = 0;
+function buildAvatar(lk, thumb) {
+  if (lk.photo) { const img = document.createElement('img'); img.src = lk.photo; img.alt = ''; img.decoding = 'async'; return { svg: img }; }
+  const uid = 'av' + (++AVN);
+  const svg = sv('svg', { viewBox: thumb ? '34 18 132 132' : '0 0 200 220', 'aria-hidden': 'true' });
+  const defs = sv('defs', {}, svg);
+  const root = sv('g', {}, svg);
+  const hair = HAIR[lk.style];
+  sv('path', { d: hair.back, fill: lk.hair }, root);
+  sv('path', { d: 'M86 140 L86 194 L114 194 L114 140 Z', fill: lk.shade }, root);
+  sv('path', { d: 'M22 222 C24 190 50 172 86 168 L100 190 L114 168 C150 172 176 190 178 222 Z', fill: lk.top }, root);
+  if (lk.acc === 'glasses' || lk.acc === 'tie') {
+    sv('path', { d: 'M86 168 L100 190 L91 197 L79 172 Z', fill: '#eef2f7' }, root);
+    sv('path', { d: 'M114 168 L100 190 L109 197 L121 172 Z', fill: '#eef2f7' }, root);
+  }
+  if (lk.acc === 'tie') sv('path', { d: 'M96 190 L104 190 L106.5 212 L100 220 L93.5 212 Z', fill: '#b8433f' }, root);
+  sv('ellipse', { cx: 49, cy: 106, rx: 7, ry: 11, fill: lk.skin }, root);
+  sv('ellipse', { cx: 151, cy: 106, rx: 7, ry: 11, fill: lk.skin }, root);
+  sv('path', { d: HEAD, fill: lk.skin }, root);
+  const cheeks = [sv('ellipse', { cx: 69, cy: 125, rx: 8.5, ry: 4.8, fill: '#ff8a8a', opacity: 0.28 }, root),
+                  sv('ellipse', { cx: 131, cy: 125, rx: 8.5, ry: 4.8, fill: '#ff8a8a', opacity: 0.28 }, root)];
+  if (lk.acc === 'freckles') for (const [x, y] of [[64, 119], [69, 122], [74, 119], [126, 119], [131, 122], [136, 119]]) sv('circle', { cx: x, cy: y, r: 1.1, fill: '#b9714b', opacity: 0.6 }, root);
+  const eyes = [], irises = [];
+  [80, 120].forEach((cx, i) => {
+    const cp = sv('clipPath', { id: uid + 'e' + i }, defs);
+    sv('ellipse', { cx, cy: 104, rx: 10, ry: 11.5 }, cp);
+    const es = lk.eyeScale || 1;
+    const eo = sv('g', es === 1 ? {} : { transform: `translate(${cx} 104) scale(${es}) translate(${-cx} -104)` }, root);
+    const g = sv('g', {}, eo);
+    sv('ellipse', { cx, cy: 104, rx: 10, ry: 11.5, fill: '#fff' }, g);
+    const clip = sv('g', { 'clip-path': `url(#${uid}e${i})` }, g);
+    const ir = sv('g', {}, clip);
+    sv('circle', { cx, cy: 105, r: 7.2, fill: lk.eye }, ir);
+    sv('circle', { cx, cy: 105, r: 3.6, fill: '#1a1312' }, ir);
+    sv('circle', { cx: cx + 2.6, cy: 102, r: 2.2, fill: '#fff' }, ir);
+    sv('circle', { cx: cx - 2.4, cy: 107.6, r: 1, fill: '#fff', opacity: 0.8 }, ir);
+    sv('path', { d: `M${cx - 10.5} 101 C${cx - 7} 92.5 ${cx + 7} 92.5 ${cx + 10.5} 101`, fill: 'none', stroke: '#2a1d1a', 'stroke-width': 2.6, 'stroke-linecap': 'round' }, g);
+    if (lk.lash) { const ox = i ? cx + 10.3 : cx - 10.3, dx = i ? 4.2 : -4.2; sv('path', { d: `M${ox} 100.5 L${ox + dx} 96`, fill: 'none', stroke: '#2a1d1a', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, g); }
+    eyes.push({ g, cx }); irises.push(ir);
+  });
+  const brows = sv('g', {}, root);
+  sv('path', { d: 'M68 87 C74 82 84 81 91 84', fill: 'none', stroke: lk.hairDark, 'stroke-width': 3.2, 'stroke-linecap': 'round' }, brows);
+  sv('path', { d: 'M109 84 C116 81 126 82 132 87', fill: 'none', stroke: lk.hairDark, 'stroke-width': 3.2, 'stroke-linecap': 'round' }, brows);
+  sv('path', { d: 'M99 112 C101 118 102 121 98 123', fill: 'none', stroke: lk.shade, 'stroke-width': 2, 'stroke-linecap': 'round' }, root);
+  const mouth = sv('path', { d: mouthD(0, 1), fill: '#8a3a3a', stroke: '#c9706c', 'stroke-width': 1.2, 'stroke-linejoin': 'round' }, root);
+  for (const d of hair.locks) sv('path', { d, fill: lk.hair }, root);
+  sv('path', { d: hair.front, fill: lk.hair }, root);
+  if (hair.line) sv('path', { d: hair.line, fill: 'none', stroke: lk.hairDark, 'stroke-width': 1.6, 'stroke-linecap': 'round' }, root);
+  sv('path', { d: 'M72 46 C84 37 100 35 114 38', fill: 'none', stroke: '#fff', 'stroke-opacity': 0.22, 'stroke-width': 4, 'stroke-linecap': 'round' }, root);
+  if (lk.acc === 'clip') sv('rect', { x: 124, y: 62, width: 15, height: 6, rx: 3, fill: '#ffd166', transform: 'rotate(-22 131 65)' }, root);
+  if (lk.acc === 'glasses') {
+    const gl = { fill: 'rgba(255,255,255,.08)', stroke: '#2b2b33', 'stroke-width': 2.4 };
+    sv('rect', Object.assign({ x: 66, y: 93, width: 28, height: 22, rx: 8 }, gl), root);
+    sv('rect', Object.assign({ x: 106, y: 93, width: 28, height: 22, rx: 8 }, gl), root);
+    sv('path', { d: 'M94 102 Q100 98 106 102', fill: 'none', stroke: '#2b2b33', 'stroke-width': 2.2 }, root);
+    sv('path', { d: 'M66 101 L53 99', fill: 'none', stroke: '#2b2b33', 'stroke-width': 2.2 }, root);
+    sv('path', { d: 'M134 101 L147 99', fill: 'none', stroke: '#2b2b33', 'stroke-width': 2.2 }, root);
+  }
+  return { svg, root, eyes, irises, brows, mouth, cheeks };
+}
+
+const AV = (() => {
+  let P = null, talking = false, thinking = false, mood = 'neutral', moodTimer = 0;
+  let mo = 0, lx = 0, ly = 0, blinkAt = -1e9, nextBlink = 0, raf = 0;
+  function mount(lk) {
+    const host = $('#stageAv'); host.textContent = '';
+    host.classList.toggle('is-photo', !!lk.photo);
+    const built = buildAvatar(lk, false); host.appendChild(built.svg);
+    P = lk.photo ? null : built;
+    talking = false; thinking = false; mood = 'neutral'; status();
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  function tick(t) {
+    raf = requestAnimationFrame(tick);
+    if (!P) return;
+    if (!reduceMotion) P.root.setAttribute('transform', `translate(0 ${(Math.sin(t / 900) * 1.3).toFixed(2)})`);
+    const idleO = mood === 'happy' ? 0.14 : mood === 'surprised' ? 0.45 : 0;
+    const target = talking ? 0.22 + 0.78 * Math.abs(Math.sin(t / 95)) * (0.55 + 0.45 * Math.sin(t / 43 + 1)) : idleO;
+    mo += (target - mo) * 0.4;
+    const w = !talking && mood === 'surprised' ? 0.55 : 1;
+    P.mouth.setAttribute('d', mouthD(Math.max(0, mo), w));
+    const tx = thinking ? 3 : 0, ty = thinking ? -3.2 : 0;
+    lx += (tx - lx) * 0.12; ly += (ty - ly) * 0.12;
+    for (const ir of P.irises) ir.setAttribute('transform', `translate(${lx.toFixed(2)} ${ly.toFixed(2)})`);
+    if (t > nextBlink) { blinkAt = t; nextBlink = t + 2200 + Math.random() * 3600; }
+    const bp = (t - blinkAt) / 150;
+    const bs = bp >= 0 && bp < 1 ? Math.max(0.08, Math.abs(1 - 2 * bp)) : 1;
+    const squint = mood === 'happy' && !thinking ? 0.84 : mood === 'surprised' ? 1.06 : 1;
+    for (const e of P.eyes) e.g.setAttribute('transform', `translate(${e.cx} 104) scale(1 ${(bs * squint).toFixed(3)}) translate(${-e.cx} -104)`);
+    P.brows.setAttribute('transform', `translate(0 ${mood === 'surprised' ? -4 : thinking ? -2 : 0})`);
+    const co = mood === 'happy' ? 0.5 : 0.28;
+    for (const c of P.cheeks) c.setAttribute('opacity', co);
+  }
+  function status() {
+    const tag = $('#tagStatus'), txt = $('#tagStatusText');
+    $('#stage').classList.toggle('speaking', talking); $('#stage').classList.toggle('thinking', thinking && !talking);
+    if (talking) { tag.hidden = false; tag.dataset.s = 'talk'; txt.textContent = '말하는 중'; }
+    else if (thinking) { tag.hidden = false; tag.dataset.s = 'think'; txt.textContent = '생각 중'; }
+    else tag.hidden = true;
+    updateTurn();
+  }
+  function setTalking(v) {
+    talking = !!v; status();
+    if (!talking) { clearTimeout(moodTimer); moodTimer = setTimeout(() => { mood = 'neutral'; }, 2500); }
+  }
+  function setThinking(v) { thinking = !!v; status(); }
+  function setMood(m) { mood = m || 'neutral'; clearTimeout(moodTimer); moodTimer = setTimeout(() => { mood = 'neutral'; }, 7000); }
+  return { mount, setTalking, setThinking, setMood, isTalking: () => talking };
+})();
+
+/* ---------- speech output ---------- */
+const TTS = (() => {
+  const synth = ('speechSynthesis' in window) ? window.speechSynthesis : null;
+  let voices = [], unlocked = false, timer = 0, seq = 0;
+  function load() { try { voices = synth ? synth.getVoices() : []; } catch (e) { voices = []; } }
+  const reload = () => { load(); renderVoiceNote(); };
+  if (synth) { load(); try { synth.addEventListener('voiceschanged', reload); } catch (e) { synth.onvoiceschanged = reload; } }
+  const norm = v => String(v.lang || '').toLowerCase().replace('_', '-');
+  function pick(lang) {
+    const want = lang.toLowerCase(), base = want.split('-')[0];
+    const exact = voices.filter(v => norm(v) === want), loose = voices.filter(v => norm(v).split('-')[0] === base);
+    const pool = exact.length ? exact : loose;
+    if (!pool.length) return null;
+    return pool.find(v => /natural|neural|premium|enhanced/i.test(v.name)) || pool.find(v => /google/i.test(v.name)) || pool.find(v => v.localService) || pool[0];
+  }
+  function speak(text, lang, o = {}) {
+    const my = ++seq;
+    let started = false, done = false;
+    const start = () => { if (started || my !== seq) return; started = true; o.onstart && o.onstart(); };
+    const finish = () => { if (done) return; done = true; clearTimeout(timer); if (my === seq) o.onend && o.onend(); };
+    const est = 1200 + text.length * (lang.startsWith('ja') ? 230 : 85) / (o.rate || 1);
+    clearTimeout(timer);
+    if (!synth) { start(); timer = setTimeout(finish, Math.min(est, 9000)); return; }
+    try { synth.cancel(); } catch (e) { /* ignore */ }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang; const v = pick(lang); if (v) u.voice = v;
+    u.rate = o.rate || 1; u.pitch = o.pitch || 1;
+    u.onstart = start; u.onend = finish; u.onerror = finish;
+    timer = setTimeout(finish, est + 2500);
+    try { synth.speak(u); } catch (e) { finish(); return; }
+    setTimeout(() => { if (!done) start(); }, 450);
+  }
+  function unlock() {
+    if (!synth || unlocked) return; unlocked = true;
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } catch (e) { /* ignore */ }
+  }
+  function stop() { seq++; try { synth && synth.cancel(); } catch (e) { /* ignore */ } }
+  return { speak, unlock, stop, available: !!synth, has: l => !!pick(l), count: () => voices.length };
+})();
+function ttsLang(lang) { const c = CH(); return lang === 'en' ? (c.lang === 'en' ? c.tts : 'en-US') : 'ja-JP'; }
+function say(text, lang, opt = {}) {
+  const c = CH();
+  const mine = opt.avatar !== false && lang === c.lang;
+  const held = !opt.onDone && HF.listening();
+  if (held) HF.hold();
+  TTS.speak(text, ttsLang(lang), { rate: S.rate * (opt.slow ? 0.72 : 1), pitch: mine ? c.pitch : 1,
+    onstart: () => { if (mine) AV.setTalking(true); },
+    onend: () => { if (mine) AV.setTalking(false); if (opt.onDone) opt.onDone(); else if (held) HF.resume(); } });
+}
+
+/* ---------- Claude ---------- */
+const samplePromise = IN_CLAUDE ? window.claude.use('sample').catch(() => null) : Promise.resolve(null);
+let blocked = '';   // '' | 'unavailable' | 'nokey' | error code
+if (IN_CLAUDE) samplePromise.then(s => { if (!s) { blocked = 'unavailable'; renderBanner(); } });
+else if (!S.apiKey) blocked = 'nokey';
+
+function schema(lang) {
+  if (lang === 'en') return [
+    '{',
+    '  "reply": "your reply, in English",',
+    '  "ko": "natural Korean translation of reply",',
+    '  "correction": null or {"better": "a natural English way to say the learner\'s last message", "why_ko": "one short Korean sentence explaining the change"},',
+    '  "vocab": [{"word": "a useful word or phrase from your reply", "ko": "its Korean meaning"}],',
+    '  "hints": [{"text": "a short reply the learner could say next, at their level", "ko": "its Korean meaning"}],',
+    '  "mood": "happy" | "neutral" | "surprised" | "thinking"',
+    '}',
+    '"vocab" has 0–2 items (skip words that are too easy for the level). "hints" has exactly 2 items.'].join('\n');
+  return [
+    '{',
+    '  "reply": "your reply, in Japanese",',
+    '  "ruby": [["今日","きょう"],["はいい",""],["天気","てんき"],["ですね。",""]],',
+    '  "reading": "reply written entirely in hiragana",',
+    '  "ko": "natural Korean translation of reply",',
+    '  "correction": null or {"better": "a natural Japanese way to say the learner\'s last message", "better_reading": "better, in hiragana", "why_ko": "one short Korean sentence explaining the change"},',
+    '  "vocab": [{"word": "a useful word or phrase from your reply", "reading": "hiragana", "ko": "its Korean meaning"}],',
+    '  "hints": [{"text": "a short reply the learner could say next, at their level", "reading": "hiragana", "ko": "its Korean meaning"}],',
+    '  "mood": "happy" | "neutral" | "surprised" | "thinking"',
+    '}',
+    '"ruby" splits reply into consecutive pieces: a piece containing kanji gets its hiragana reading, every other piece gets "". Joining all pieces must reproduce "reply" exactly. "vocab" has 0–2 items (skip words that are too easy for the level). "hints" has exactly 2 items.'].join('\n');
+}
+function buildPrompt(c, sc, log, level) {
+  const lang = c.lang === 'en' ? 'English' : 'Japanese';
+  const lv = LV[level];
+  const hist = log.slice(-18).map(m => (m.who === 'me' ? 'Learner' : c.n) + ': ' + m.text);
+  return [
+    `You are a character in a Korean phone app where learners practise ${lang} conversation by chatting with you.`,
+    `CHARACTER: ${c.persona}`,
+    `SCENE: ${sc.role}`,
+    `LEARNER: a Korean speaker. Level: ${lv.p[c.lang]}`,
+    'RULES:',
+    `- Stay in character and keep the conversation going; usually end with one short question. "reply" is only in ${lang}.`,
+    '- The learner may type, use voice dictation (so ignore missing punctuation, capitalisation and small spelling slips), write Korean, or mix languages.',
+    `- If the learner wrote Korean (fully or partly), answer naturally in ${lang} and put a natural ${lang} way to say what they meant in correction.better.`,
+    `- ${lv.fix} Otherwise "correction" is null. Never lecture inside "reply".`,
+    `- If the learner asks what something means or how to say something, help briefly and in character, in ${lang}.`,
+    '- Keep it friendly and suitable for all ages.',
+    '',
+    'Conversation so far (oldest first; the last line is the learner\'s newest message):',
+    ...hist,
+    '',
+    'Reply with only one JSON object in this shape:',
+    schema(c.lang),
+  ].join('\n');
+}
+const KANJI = /[㐀-鿿豈-﫿々〆]/;
+function clean(r, lang) {
+  if (!r || typeof r !== 'object' || typeof r.reply !== 'string' || !r.reply.trim()) throw { code: 'invalid_json' };
+  const str = v => (typeof v === 'string' ? v.trim() : '');
+  const them = { who: 'them', text: r.reply.trim(), ko: str(r.ko), mood: ['happy', 'neutral', 'surprised', 'thinking'].includes(r.mood) ? r.mood : 'neutral' };
+  if (lang === 'ja') {
+    them.reading = str(r.reading);
+    if (Array.isArray(r.ruby)) {
+      const segs = r.ruby.filter(p => Array.isArray(p) && typeof p[0] === 'string').map(p => [p[0], typeof p[1] === 'string' ? p[1].trim() : '']);
+      const joined = segs.map(p => p[0]).join('');
+      if (segs.length && joined.replace(/\s/g, '') === them.text.replace(/\s/g, '')) them.ruby = segs;
+    }
+  }
+  them.vocab = (Array.isArray(r.vocab) ? r.vocab : []).filter(v => v && str(v.word)).slice(0, 3).map(v => ({ word: str(v.word), reading: str(v.reading), ko: str(v.ko) }));
+  them.hints = (Array.isArray(r.hints) ? r.hints : []).filter(h => h && str(h.text)).slice(0, 3).map(h => ({ text: str(h.text), reading: str(h.reading), ko: str(h.ko) }));
+  let fix = null;
+  const cr = r.correction;
+  if (cr && typeof cr === 'object' && str(cr.better)) fix = { better: str(cr.better), reading: str(cr.better_reading), why: str(cr.why_ko) };
+  return { them, fix };
+}
+
+/* Standalone page (outside claude.ai): Claude API with the key saved on this phone. */
+const SDK_URL = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.134.0/+esm';
+let sdkMod = null, apiClient = null, apiClientKey = '';
+const STR = { type: 'string' };
+const obj = (props) => ({ type: 'object', additionalProperties: false, required: Object.keys(props), properties: props });
+const REPLY_SCHEMA = obj({
+  reply: STR, ko: STR, reading: STR,
+  ruby: { type: 'array', items: { type: 'array', items: STR } },
+  correction: obj({ better: STR, better_reading: STR, why_ko: STR }),
+  vocab: { type: 'array', items: obj({ word: STR, reading: STR, ko: STR }) },
+  hints: { type: 'array', items: obj({ text: STR, reading: STR, ko: STR }) },
+  mood: { type: 'string', enum: ['happy', 'neutral', 'surprised', 'thinking'] },
+});
+async function apiJson(prompt, signal) {
+  let Anthropic;
+  try {
+    if (!sdkMod) sdkMod = await import(SDK_URL);
+    Anthropic = sdkMod.default || sdkMod.Anthropic;
+  } catch (e) { throw { code: 'sdk_load' }; }
+  if (!apiClient || apiClientKey !== S.apiKey) {
+    apiClient = new Anthropic({ apiKey: S.apiKey, dangerouslyAllowBrowser: true, maxRetries: 1 });
+    apiClientKey = S.apiKey;
+  }
+  const model = MODELS[S.model] ? S.model : DEF.model;
+  const params = {
+    model, max_tokens: 16000,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: REPLY_SCHEMA } },
+    messages: [{ role: 'user', content: prompt + '\nWhen there is nothing to correct, set every field of "correction" to an empty string. For English, "ruby" is [] and every "reading" is "".' }],
+  };
+  let msg;
+  try {
+    msg = model === 'claude-haiku-5-5'
+      ? await apiClient.messages.create(params, { signal })
+      : await apiClient.beta.messages.create({ ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }, { signal });
+  } catch (e) {
+    if (e instanceof Anthropic.APIUserAbortError) throw { code: 'cancelled' };
+    if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) throw { code: 'bad_key' };
+    if (e instanceof Anthropic.RateLimitError) throw { code: 'rate_limited' };
+    if (e instanceof Anthropic.BadRequestError) {
+      console.error('Claude API 400', e.message);
+      throw { code: /credit/i.test(e.message || '') ? 'no_credit' : 'bad_request', message: e.message };
+    }
+    throw { code: 'upstream_error' };
+  }
+  if (msg.stop_reason === 'refusal') throw { code: 'refused' };
+  const tb = (msg.content || []).find(b => b.type === 'text');
+  if (!tb || msg.stop_reason === 'max_tokens') throw { code: 'invalid_json' };
+  try { return JSON.parse(tb.text); } catch (e) { throw { code: 'invalid_json' }; }
+}
+async function getBackend() {
+  if (IN_CLAUDE) {
+    const sample = await samplePromise;
+    return sample ? (prompt, signal) => sample.json(prompt, { modelTier: 'quick', cache: false, signal }) : null;
+  }
+  return S.apiKey ? apiJson : null;
+}
+
+let busy = false, busyKey = '', ctl = null, lastErr = '', autoT = 0;
+async function send(textArg) {
+  const box = $('#msg');
+  const text = String(textArg != null ? textArg : box.value).trim();
+  if (!text || busy || (blocked && blocked !== '')) return;
+  clearTimeout(autoT); $('#sendBtn').classList.remove('arming');
+  TTS.stop(); TTS.unlock(); AV.setTalking(false);
+  box.value = ''; autosize(); showHints(false);
+  getLog().push({ who: 'me', text });
+  save(); lastErr = ''; renderLog();
+  await ask();
+}
+async function ask() {
+  if (busy) return;
+  busy = true;
+  const backend = await getBackend();
+  if (!backend) { busy = false; blocked = IN_CLAUDE ? 'unavailable' : 'nokey'; renderBanner(); renderLog(); HF.stop(); return; }
+  const key = logKey(), c = CH(), sc = SC(), level = S.level;
+  const log = getLog(key);
+  busyKey = key; lastErr = ''; ctl = new AbortController();
+  setBusyUI(true); AV.setThinking(true); renderLog();
+  try {
+    const r = await backend(buildPrompt(c, sc, log, level), ctl.signal);
+    const { them, fix } = clean(r, c.lang);
+    const last = log[log.length - 1];
+    if (fix && last && last.who === 'me') last.fix = fix;
+    log.push(them);
+    if (log.length > 80) log.splice(1, log.length - 80);
+    save();
+    busy = false;
+    if (key === logKey()) {
+      renderLog();
+      AV.setMood(them.mood);
+      if (S.auto || S.mode === 'call') { HF.speaking(); say(them.text, c.lang, { onDone: HF.resume }); } else HF.resume();
+    }
+  } catch (e) {
+    handleErr(e); HF.stop();
+  } finally {
+    busy = false; ctl = null; setBusyUI(false); AV.setThinking(false);
+    if (key === logKey()) renderLog();
+  }
+}
+const ERR = {
+  session_expired: 'claude.ai 로그인이 만료됐어요. 다시 로그인한 뒤 이 페이지를 새로 열어 주세요.',
+  rate_limited: '잠시 너무 많이 보냈거나 사용 한도에 닿았어요. 조금 뒤에 다시 시도해 주세요.',
+  refused: '이 말에는 답할 수 없대요. 다르게 말해 볼까요?',
+  prompt_too_large: '대화가 너무 길어요. 설정에서 이 대화를 처음부터 다시 시작해 주세요.',
+  cancelled: '보내기를 멈췄어요.',
+  bad_key: 'API 키가 맞지 않아요. 설정에서 키를 다시 넣어 주세요.',
+  no_credit: 'Claude API 계정의 크레딧이 부족해요. console.anthropic.com 의 결제(Billing)를 확인해 주세요.',
+  sdk_load: 'Claude 연결 프로그램을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.',
+};
+const HARD = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+function handleErr(e) {
+  const code = (e && e.code) || 'upstream_error';
+  if (HARD.includes(code)) { blocked = code; renderBanner(); lastErr = ''; return; }
+  lastErr = code === 'bad_request'
+    ? 'Claude 서버가 요청을 거절했어요: ' + String((e && e.message) || '').slice(0, 200)
+    : ERR[code] || '답을 받지 못했어요. 연결이 잠깐 끊겼을 수 있어요.';
+}
+function setBusyUI(on) {
+  const b = $('#sendBtn');
+  b.dataset.busy = on ? 'true' : 'false';
+  b.textContent = ''; b.appendChild(icon(on ? 'stop' : 'send', 20, on));
+  b.setAttribute('aria-label', on ? '멈추기' : '보내기');
+  updateTurn();
+}
+
+/* ---------- notes ---------- */
+function isSaved(lang, text) { return S.notes.some(n => n.lang === lang && n.text === text); }
+function toggleNote(n) {
+  const i = S.notes.findIndex(x => x.lang === n.lang && x.text === n.text);
+  if (i >= 0) S.notes.splice(i, 1); else S.notes.unshift({ lang: n.lang, text: n.text, reading: n.reading || '', ko: n.ko || '', ts: Date.now() });
+  if (S.notes.length > 400) S.notes.length = 400;
+  save(); renderBadge();
+  return i < 0;
+}
+function renderBadge() { const b = $('#notesBadge'); b.hidden = !S.notes.length; b.textContent = S.notes.length > 99 ? '99+' : String(S.notes.length); }
+
+/* ---------- render ---------- */
+function actBtn(name, label, fn, pressed) {
+  const b = el('button', 'act'); b.type = 'button'; b.setAttribute('aria-label', label); b.title = label;
+  b.appendChild(icon(name, 18, !!pressed));
+  if (pressed != null) b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+  b.addEventListener('click', fn); return b;
+}
+function saveBtn(note) {
+  const on = isSaved(note.lang, note.text);
+  const b = actBtn('bookmark', on ? '노트에서 빼기' : '노트에 저장', () => {
+    const now = toggleNote(note);
+    b.setAttribute('aria-pressed', now ? 'true' : 'false');
+    b.setAttribute('aria-label', now ? '노트에서 빼기' : '노트에 저장'); b.title = b.getAttribute('aria-label');
+    b.textContent = ''; b.appendChild(icon('bookmark', 18, now));
+  }, on);
+  return b;
+}
+function targetNode(text, ruby, lang, cls = 't') {
+  const p = el('div', cls); p.lang = lang;
+  if (lang === 'ja' && S.showReading && ruby) {
+    for (const [b, r] of ruby) {
+      if (r && KANJI.test(b)) { const rb = document.createElement('ruby'); rb.append(b); const rt = document.createElement('rt'); rt.textContent = r; rb.append(rt); p.append(rb); }
+      else p.append(b);
+    }
+  } else p.textContent = text;
+  return p;
+}
+function themNode(m, lang) {
+  const b = el('div', 'msg them');
+  b.append(targetNode(m.text, m.ruby, lang));
+  if (lang === 'ja' && S.showReading && !m.ruby && m.reading && m.reading !== m.text) { const r = el('div', 'reading', m.reading); r.lang = 'ja'; b.append(r); }
+  if (S.showKo && m.ko) b.append(el('div', 'ko', m.ko));
+  if (m.vocab && m.vocab.length) {
+    const v = el('div', 'vocab');
+    for (const w of m.vocab) {
+      const chip = el('span', 'vchip');
+      const sayB = el('button'); sayB.type = 'button'; sayB.setAttribute('aria-label', w.word + ' 듣기');
+      const ww = el('span', 'vw', w.word); ww.lang = lang; sayB.append(ww);
+      if (lang === 'ja' && w.reading && w.reading !== w.word) { const rr = el('span', 'vr', w.reading); rr.lang = 'ja'; sayB.append(rr); }
+      if (w.ko) sayB.append(el('span', 'vk', w.ko));
+      sayB.addEventListener('click', () => say(w.word, lang, { avatar: false }));
+      const note = { lang, text: w.word, reading: w.reading, ko: w.ko };
+      const sb = el('button', 'vs'); sb.type = 'button';
+      const paint = () => { const on = isSaved(lang, w.word); sb.textContent = ''; sb.appendChild(icon(on ? 'check' : 'plus', 16)); sb.setAttribute('aria-pressed', on ? 'true' : 'false'); sb.setAttribute('aria-label', on ? '노트에서 빼기' : '노트에 저장'); };
+      paint(); sb.addEventListener('click', () => { toggleNote(note); paint(); });
+      chip.append(sayB, sb); v.append(chip);
+    }
+    b.append(v);
+  }
+  const acts = el('div', 'acts');
+  acts.append(actBtn('speaker', '듣기', () => say(m.text, lang)));
+  const slow = el('button', 'act', '0.7×'); slow.type = 'button'; slow.setAttribute('aria-label', '천천히 듣기'); slow.title = '천천히 듣기';
+  slow.addEventListener('click', () => say(m.text, lang, { slow: true }));
+  acts.append(slow, saveBtn({ lang, text: m.text, reading: m.reading || '', ko: m.ko || '' }));
+  b.append(acts);
+  return b;
+}
+function meNode(m, lang) {
+  const w = el('div', 'me-wrap');
+  w.append(el('div', 'me', m.text));
+  if (m.fix) {
+    const f = el('div', 'fix');
+    f.append(el('div', 'fix-label', '더 자연스럽게'));
+    const bt = el('div', 'fix-better', m.fix.better); bt.lang = lang; f.append(bt);
+    if (lang === 'ja' && S.showReading && m.fix.reading && m.fix.reading !== m.fix.better) { const r = el('div', 'reading', m.fix.reading); r.lang = 'ja'; f.append(r); }
+    if (m.fix.why) f.append(el('div', 'fix-why', m.fix.why));
+    const acts = el('div', 'acts');
+    acts.append(actBtn('speaker', '듣기', () => say(m.fix.better, lang)));
+    const slow = el('button', 'act', '0.7×'); slow.type = 'button'; slow.setAttribute('aria-label', '천천히 듣기');
+    slow.addEventListener('click', () => say(m.fix.better, lang, { slow: true }));
+    acts.append(slow, saveBtn({ lang, text: m.fix.better, reading: m.fix.reading, ko: '내가 한 말: ' + m.text }));
+    f.append(acts);
+    w.append(f);
+  }
+  return w;
+}
+function renderLog() {
+  const box = $('#log'); box.textContent = '';
+  const c = CH(), log = getLog();
+  box.append(el('p', 'log-intro', `${SC().ko} · ${LANG_KO[c.lang]} ${LV[S.level].ko}`));
+  for (const m of log) box.append(m.who === 'me' ? meNode(m, c.lang) : themNode(m, c.lang));
+  if (busy && busyKey === logKey()) {
+    const p = el('div', 'msg them pending'); p.setAttribute('aria-label', '답을 쓰는 중'); p.append(el('i'), el('i'), el('i')); box.append(p);
+  } else { const rn = retryNode(); if (rn) box.append(rn); }
+  const mine = log.filter(m => m.who === 'me').length;
+  $('#tip').hidden = mine >= (S.mode === 'call' ? 3 : 2);
+  requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+  if (!$('#hints').hidden) renderHints();
+  renderCall();
+}
+function retryNode() {
+  const log = getLog(), last = log[log.length - 1];
+  if ((busy && busyKey === logKey()) || !last || last.who !== 'me' || blocked) return null;
+  const n = el('div', 'note');
+  n.append(el('span', '', lastErr || '아직 답을 받지 못했어요.'));
+  const a = el('div', 'note-acts');
+  const r = el('button', 'btn primary', '다시 시도'); r.type = 'button'; r.addEventListener('click', () => { TTS.unlock(); ask(); });
+  const d = el('button', 'btn', '이 말 지우기'); d.type = 'button';
+  d.addEventListener('click', () => { const lg = getLog(); if (lg.length && lg[lg.length - 1].who === 'me') { const t = lg.pop().text; save(); lastErr = ''; renderLog(); const bx = $('#msg'); bx.value = t; autosize(); bx.focus(); } });
+  a.append(r, d); n.append(a);
+  return n;
+}
+function renderCall() {
+  const c = CH(), log = getLog(), lang = c.lang;
+  const sub = $('#subtitle'); sub.textContent = '';
+  let ti = -1, mi = -1;
+  for (let i = log.length - 1; i >= 0; i--) { if (ti < 0 && log[i].who === 'them') ti = i; if (mi < 0 && log[i].who === 'me') mi = i; }
+  if (ti >= 0) {
+    const m = log[ti];
+    sub.append(targetNode(m.text, m.ruby, lang, 'st'));
+    if (lang === 'ja' && S.showReading && !m.ruby && m.reading && m.reading !== m.text) { const r = el('div', 'sk', m.reading); r.lang = 'ja'; sub.append(r); }
+    if (S.showKo && m.ko) sub.append(el('div', 'sk', m.ko));
+    const acts = el('div', 'acts');
+    acts.append(actBtn('speaker', '다시 듣기', () => say(m.text, lang)));
+    const slow = el('button', 'act', '0.7×'); slow.type = 'button'; slow.setAttribute('aria-label', '천천히 듣기');
+    slow.addEventListener('click', () => say(m.text, lang, { slow: true }));
+    acts.append(slow, saveBtn({ lang, text: m.text, reading: m.reading || '', ko: m.ko || '' }));
+    sub.append(acts);
+  }
+  const my = $('#myline'); my.textContent = '';
+  if (mi >= 0 && mi >= ti - 1) my.append(meNode(log[mi], lang));
+  if (!(busy && busyKey === logKey())) { const rn = retryNode(); if (rn) my.append(rn); }
+  requestAnimationFrame(() => { my.scrollTop = my.scrollHeight; });
+}
+function updateTurn() {
+  const box = $('#msg');
+  box.classList.toggle('yourturn', S.mode === 'call' && !busy && !blocked && !AV.isTalking() && !box.value);
+}
+function greetIfFresh() {
+  if (S.mode !== 'call') return;
+  const log = getLog();
+  if (log.length === 1 && log[0].who === 'them') say(log[0].text, CH().lang);
+}
+function applyMode() {
+  const call = S.mode === 'call', c = CH();
+  const hf = call && HF.available();
+  const app = $('#app'); app.classList.toggle('call', call); app.classList.toggle('chat', !call); app.classList.toggle('handsfree', hf);
+  if (!hf) HF.stop();
+  $('#modeCall').setAttribute('aria-pressed', call ? 'true' : 'false');
+  $('#modeChat').setAttribute('aria-pressed', call ? 'false' : 'true');
+  $('#msg').placeholder = call ? '눌러서 말하기' : (c.lang === 'en' ? '영어로 말해 보세요' : '일본어로 말해 보세요');
+  $('#tipText').textContent = hf
+    ? `대화 시작을 누르고 그냥 말하세요. 말을 멈추고 ${S.waitSec}초가 지나면 ${c.k}가 대답해요.`
+    : call
+    ? '칸을 누르고 키보드의 마이크로 말하세요. 말을 멈추면 자동으로 보내요.'
+    : '키보드의 마이크(받아쓰기)로 말해도 돼요. 모르는 말은 한국어로 물어보세요.';
+  renderLog(); updateTurn();
+}
+function lastHints() {
+  const log = getLog();
+  for (let i = log.length - 1; i >= 0; i--) if (log[i].who === 'them') return log[i].hints || [];
+  return [];
+}
+function renderHints() {
+  const box = $('#hints'); box.textContent = '';
+  const c = CH(), hs = lastHints();
+  if (!hs.length) { box.append(el('span', 'hk', '이번 답장에는 힌트가 없어요.')); return; }
+  for (const h of hs) {
+    const b = el('button', 'hint'); b.type = 'button';
+    const t = el('span', 'ht', h.text); t.lang = c.lang; b.append(t);
+    if (c.lang === 'ja' && h.reading && h.reading !== h.text) { const r = el('span', 'hr', h.reading); r.lang = 'ja'; b.append(r); }
+    if (h.ko) b.append(el('span', 'hk', h.ko));
+    b.addEventListener('click', () => { const bx = $('#msg'); bx.value = h.text; autosize(); bx.focus(); say(h.text, c.lang, { avatar: false }); });
+    box.append(b);
+  }
+}
+function showHints(on) {
+  const box = $('#hints'), btn = $('#hintBtn');
+  box.hidden = !on; btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+  if (on) renderHints();
+}
+function renderBanner() {
+  const b = $('#banner');
+  HF.render();
+  if (!blocked) { b.hidden = true; $('#sendBtn').disabled = false; return; }
+  b.hidden = false;
+  $('#sendBtn').disabled = true;
+  if (blocked === 'nokey') {
+    b.textContent = '';
+    b.append(el('span', '', '이 페이지는 내 Claude API 키로 대화해요. 설정에서 키를 넣어 주세요. '));
+    const go = el('button', 'btn primary', '설정 열기'); go.type = 'button';
+    go.addEventListener('click', () => { renderSettings(); open('sheetSet'); });
+    b.append(go);
+    return;
+  }
+  b.textContent = blocked === 'not_granted'
+    ? 'Claude 사용을 허용하지 않아서 대화할 수 없어요. 페이지를 새로 열고, 처음 보낼 때 나오는 창에서 허용을 눌러 주세요.'
+    : blocked === 'unavailable'
+      ? '여기서는 Claude에 연결되지 않아요. claude.ai(웹 또는 Claude 앱)에 로그인한 상태로 이 링크를 열어 주세요. 듣기와 노트는 지금도 쓸 수 있어요.'
+      : '이 계정이나 화면에서는 Claude 대화를 쓸 수 없어요. 듣기와 노트는 계속 쓸 수 있어요.';
+  $('#sendBtn').disabled = true;
+}
+function renderScenes() {
+  const nav = $('#scenes'); nav.textContent = '';
+  for (const s of SCENES) {
+    const b = el('button', 'scene', s.ko); b.type = 'button';
+    b.setAttribute('aria-pressed', s.id === S.scene ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      if (s.id === S.scene) return;
+      HF.stop();
+      if (ctl) ctl.abort();
+      TTS.stop(); AV.setTalking(false);
+      S.scene = s.id; save(); lastErr = '';
+      renderScenes(); showHints(false); renderLog(); greetIfFresh();
+      b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    nav.append(b);
+  }
+}
+function setStageColors(node, lk) { node.style.setProperty('--a', lk.a); node.style.setProperty('--b', lk.b); }
+function applyChar() {
+  const c = CH(), lv = LV[S.level];
+  setStageColors($('#stage'), c.look);
+  AV.mount(c.look);
+  const th = $('#whoThumb'); th.textContent = ''; setStageColors(th, c.look); th.appendChild(buildAvatar(c.look, true).svg);
+  const nm = $('#whoName'); nm.textContent = c.name; nm.lang = c.lang;
+  $('#whoSub').textContent = `${c.sub} · ${LANG_KO[c.lang]}`;
+  $('#tagLang').textContent = `${LANG_LABEL[c.lang]} · ${lv.ko} ${lv.tag[c.lang]}`;
+  const tn = $('#tagName'); tn.textContent = '';
+  const b = el('b', '', c.name); b.lang = c.lang; tn.append(b, document.createTextNode(' · ' + c.sub));
+  renderScenes(); showHints(false); applyMode();
+}
+
+/* ---------- sheets ---------- */
+let openSheet = null, lastFocus = null;
+function open(id) {
+  close();
+  lastFocus = document.activeElement;
+  openSheet = $('#' + id); openSheet.hidden = false; $('#scrim').hidden = false;
+  const f = openSheet.querySelector('[data-close]'); if (f) f.focus();
+}
+function close() {
+  if (!openSheet) return;
+  openSheet.hidden = true; $('#scrim').hidden = true; openSheet = null;
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+document.querySelectorAll('[data-close]').forEach(b => { b.appendChild(icon('close')); b.addEventListener('click', close); });
+$('#scrim').addEventListener('click', close);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+function renderChars() {
+  const box = $('#charGroups'); box.textContent = '';
+  for (const [label, ids] of CHAR_GROUPS) {
+    box.append(el('div', 'grp', label));
+    const grid = el('div', 'cards');
+    for (const id of ids) {
+      const c = CHARS[id];
+      const b = el('button', 'card'); b.type = 'button';
+      if (id === S.char) b.setAttribute('aria-current', 'true');
+      const av = el('span', 'cav'); setStageColors(av, c.look); av.appendChild(buildAvatar(c.look, false).svg);
+      const nm = el('span', 'cn', c.name); nm.lang = c.lang;
+      b.append(av, nm, el('span', 'cs', `${c.sub} · ${LANG_KO[c.lang]}`), el('span', 'cd', c.desc));
+      b.addEventListener('click', () => {
+        if (ctl) ctl.abort();
+        HF.stop(); TTS.stop(); S.char = id; save(); lastErr = ''; close(); applyChar(); greetIfFresh();
+      });
+      grid.append(b);
+    }
+    box.append(grid);
+  }
+}
+$('#whoBtn').addEventListener('click', () => { renderChars(); open('sheetChars'); });
+
+function renderSettings() {
+  const seg = $('#levelSeg'); seg.textContent = '';
+  const c = CH();
+  for (const k of ['beg', 'mid', 'adv']) {
+    const b = el('button'); b.type = 'button'; b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', k === S.level ? 'true' : 'false');
+    b.append(el('b', '', LV[k].ko), el('small', '', LV[k].tag[c.lang]));
+    b.addEventListener('click', () => { S.level = k; save(); renderSettings(); applyChar(); });
+    seg.append(b);
+  }
+  $('#levelHint').textContent = '레벨은 다음 답장부터 바로 반영돼요.';
+  $('#optKo').checked = !!S.showKo;
+  $('#optReading').checked = !!S.showReading;
+  $('#optAuto').checked = !!S.auto;
+  $('#optAutoSend').checked = !!S.autoSend;
+  $('#optRate').value = String(S.rate);
+  $('#rateVal').textContent = S.rate.toFixed(2) + '×';
+  $('#optWait').value = String(S.waitSec);
+  $('#waitVal').textContent = S.waitSec + '초';
+  $('#apiField').hidden = IN_CLAUDE;
+  if (!IN_CLAUDE) {
+    $('#optKey').value = S.apiKey;
+    const sel = $('#optModel');
+    if (!sel.options.length) for (const [id, label] of Object.entries(MODELS)) { const o = el('option', '', label); o.value = id; sel.append(o); }
+    sel.value = S.model;
+    renderKeyNote();
+  }
+  renderVoiceNote();
+}
+function renderKeyNote() {
+  $('#keyNote').textContent = S.apiKey
+    ? '키가 저장돼 있어요. 키는 이 휴대폰 브라우저에만 남고, 대화할 때 Anthropic 서버로만 보내요.'
+    : 'console.anthropic.com 에서 만든 API 키를 붙여 넣으세요. 대화할 때마다 그 계정에 사용료가 붙어요.';
+}
+function renderVoiceNote() {
+  const n = $('#voiceNote'); if (!n) return;
+  if (!TTS.available) { n.textContent = '이 화면에서는 음성 읽기를 지원하지 않아요. 글자로는 그대로 연습할 수 있어요.'; return; }
+  if (!TTS.count()) { n.textContent = '기기 음성 목록을 아직 못 받았어요. 듣기 버튼을 누르면 기본 음성으로 읽어 봐요.'; return; }
+  const en = TTS.has('en-US') || TTS.has('en-GB'), ja = TTS.has('ja-JP');
+  let s = `이 기기 음성 — 영어 ${en ? '있음' : '없음'}, 일본어 ${ja ? '있음' : '없음'}.`;
+  if (!en || !ja) s += ' 없는 언어는 휴대폰 설정의 텍스트 음성 변환(TTS)에서 음성 데이터를 내려받으면 들을 수 있어요.';
+  n.textContent = s;
+}
+$('#setBtn').appendChild(icon('sliders'));
+$('#setBtn').addEventListener('click', () => { renderSettings(); open('sheetSet'); });
+$('#optKo').addEventListener('change', e => { S.showKo = e.target.checked; save(); renderLog(); });
+$('#optReading').addEventListener('change', e => { S.showReading = e.target.checked; save(); renderLog(); });
+$('#optAuto').addEventListener('change', e => { S.auto = e.target.checked; save(); });
+$('#optAutoSend').addEventListener('change', e => { S.autoSend = e.target.checked; save(); if (!S.autoSend) { clearTimeout(autoT); $('#sendBtn').classList.remove('arming'); } });
+$('#optRate').addEventListener('input', e => { S.rate = Math.min(1.2, Math.max(0.6, Number(e.target.value) || 0.9)); $('#rateVal').textContent = S.rate.toFixed(2) + '×'; save(); });
+$('#optWait').addEventListener('input', e => { S.waitSec = Math.min(6, Math.max(1.5, Number(e.target.value) || 3)); $('#waitVal').textContent = S.waitSec + '초'; save(); });
+$('#optWait').addEventListener('change', () => applyMode());
+$('#optKey').addEventListener('change', e => {
+  S.apiKey = e.target.value.trim(); save(); apiClient = null;
+  if (!IN_CLAUDE) blocked = S.apiKey ? '' : 'nokey';
+  renderBanner(); renderKeyNote(); renderLog();
+});
+$('#optModel').addEventListener('change', e => { S.model = MODELS[e.target.value] ? e.target.value : DEF.model; save(); });
+let resetArm = 0;
+$('#resetBtn').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (!resetArm) {
+    b.textContent = '한 번 더 누르면 이 대화를 지워요';
+    resetArm = setTimeout(() => { resetArm = 0; b.textContent = '이 대화 처음부터 다시'; }, 3500);
+    return;
+  }
+  clearTimeout(resetArm); resetArm = 0; b.textContent = '이 대화 처음부터 다시';
+  if (ctl) ctl.abort();
+  HF.stop(); TTS.stop(); AV.setTalking(false); delete S.logs[logKey()]; save(); lastErr = ''; close(); showHints(false); renderLog();
+});
+
+function renderNotes() {
+  const tabs = $('#notesTabs'); tabs.textContent = '';
+  for (const [k, label] of [['all', '전체'], ['en', 'English'], ['ja', '日本語']]) {
+    const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', S.notesTab === k ? 'true' : 'false');
+    const n = k === 'all' ? S.notes.length : S.notes.filter(x => x.lang === k).length;
+    b.append(el('b', '', label), el('small', '', n + '개'));
+    b.addEventListener('click', () => { S.notesTab = k; save(); renderNotes(); });
+    tabs.append(b);
+  }
+  const list = $('#notesList'); list.textContent = '';
+  const items = S.notes.filter(x => S.notesTab === 'all' || x.lang === S.notesTab);
+  $('#notesEmpty').hidden = items.length > 0;
+  for (const n of items) {
+    const li = el('li');
+    const t = el('div', 'nt');
+    const x = el('div', 'nx', n.text); x.lang = n.lang; t.append(x);
+    if (n.lang === 'ja' && n.reading && n.reading !== n.text) { const r = el('div', 'nr', n.reading); r.lang = 'ja'; t.append(r); }
+    if (n.ko) t.append(el('div', 'nk', n.ko));
+    const play = actBtn('speaker', '듣기', () => say(n.text, n.lang, { avatar: false }));
+    const del = actBtn('trash', '노트에서 지우기', () => { toggleNote(n); renderNotes(); renderLog(); });
+    li.append(t, play, del); list.append(li);
+  }
+}
+$('#notesBtn').prepend(icon('book'));
+$('#notesBtn').addEventListener('click', () => { renderNotes(); open('sheetNotes'); });
+
+/* ---------- hands-free conversation (standalone page with a microphone) ---------- */
+const HF = (() => {
+  let on = false, phase = 'off', rec = null, heard = '', session = '', note = '';
+  let silenceT = 0, restartT = 0, idleT = 0;
+  const live = $('#live'), btn = $('#callBtn');
+  const available = () => !IN_CLAUDE && !!SRClass;
+  function lastThem() { const log = getLog(); for (let i = log.length - 1; i >= 0; i--) if (log[i].who === 'them') return log[i]; return null; }
+  function render() {
+    btn.dataset.on = on ? 'true' : 'false';
+    btn.textContent = '';
+    btn.append(icon(on ? 'stop' : 'mic', 20, on), el('span', '', on ? '대화 끝내기' : '대화 시작'));
+    btn.disabled = !!blocked && !on;
+    live.textContent = '';
+    if (!on) { live.hidden = !note; if (note) live.append(el('div', 'ls', note)); return; }
+    live.hidden = false;
+    const c = CH(), text = (heard + ' ' + session).trim();
+    const st = el('div', 'ls');
+    if (phase === 'listening') st.append(el('i', 'dot'), el('span', '', text ? `말이 끝나면 ${S.waitSec}초 뒤에 보내요` : `듣고 있어요 — ${LANG_KO[c.lang]}로 말해 보세요`));
+    else if (phase === 'thinking') st.append(el('span', '', `${c.k}가 생각하고 있어요`));
+    else st.append(el('span', '', `${c.k}가 말하고 있어요`));
+    live.append(st);
+    if (phase === 'listening' && text) {
+      const t = el('div', 'lt', text); t.lang = c.lang; live.append(t);
+      const bar = el('div', 'bar'); bar.append(el('i')); live.style.setProperty('--wait', S.waitSec + 's'); live.append(bar);
+    }
+  }
+  function setPhase(p) { phase = p; render(); }
+  function stopRec() { const r = rec; rec = null; if (r) { try { r.abort(); } catch (e) { /* already stopped */ } } }
+  function fail(code) {
+    stop();
+    note = code === 'not-allowed' || code === 'service-not-allowed'
+      ? '마이크 사용이 막혀 있어요. 주소창 자물쇠(사이트 설정)에서 마이크를 허용한 뒤 다시 눌러 주세요.'
+      : code === 'audio-capture' ? '마이크를 찾지 못했어요.' : '음성 인식을 시작하지 못했어요.';
+    render();
+  }
+  function startRec() {
+    stopRec();
+    if (!on || phase !== 'listening') return;
+    let r;
+    try { r = new SRClass(); } catch (e) { fail('start'); return; }
+    rec = r;
+    r.lang = ttsLang(CH().lang); r.continuous = false; r.interimResults = true; r.maxAlternatives = 1;
+    r.onresult = e => {
+      if (rec !== r) return;
+      let t = '';
+      for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      session = t.trim();
+      armSilence(); render();
+    };
+    r.onerror = e => { if (rec === r && (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture')) fail(e.error); };
+    r.onend = () => {
+      if (rec !== r) return;
+      rec = null;
+      if (session) { heard = (heard + ' ' + session).trim(); session = ''; }
+      if (on && phase === 'listening') { clearTimeout(restartT); restartT = setTimeout(startRec, 150); }
+    };
+    try { r.start(); } catch (e) { fail('start'); }
+  }
+  function armSilence() {
+    clearTimeout(silenceT); clearTimeout(idleT);
+    if ((heard + session).trim()) silenceT = setTimeout(finish, S.waitSec * 1000);
+  }
+  function armIdle() {
+    clearTimeout(idleT);
+    idleT = setTimeout(() => { if (on && phase === 'listening' && !(heard + session).trim()) { stop(); note = '한동안 말이 없어서 대화를 멈췄어요. 다시 하려면 대화 시작을 누르세요.'; render(); } }, 90000);
+  }
+  function finish() {
+    const text = (heard + ' ' + session).trim();
+    if (!on || phase !== 'listening' || !text) return;
+    heard = ''; session = '';
+    setPhase('thinking'); stopRec(); clearTimeout(idleT);
+    send(text);
+  }
+  function listen() {
+    if (!on || busy) return;
+    heard = ''; session = '';
+    setPhase('listening'); startRec(); armIdle();
+  }
+  function resume() { if (!on || busy) return; clearTimeout(restartT); restartT = setTimeout(listen, 300); }
+  function hold() { if (!on) return; clearTimeout(silenceT); stopRec(); setPhase('speaking'); }
+  function speaking() { if (on) { stopRec(); setPhase('speaking'); } }
+  function start() {
+    if (on || !available()) return;
+    if (blocked) { renderBanner(); return; }
+    on = true; note = ''; heard = ''; session = '';
+    TTS.unlock(); showHints(false);
+    const log = getLog(), last = log[log.length - 1];
+    if (busy) { setPhase('thinking'); return; }
+    if (last && last.who === 'me') { setPhase('thinking'); ask(); return; }
+    const t = lastThem();
+    if (t) { setPhase('speaking'); say(t.text, CH().lang, { onDone: resume }); } else listen();
+  }
+  function stop() {
+    clearTimeout(silenceT); clearTimeout(restartT); clearTimeout(idleT);
+    stopRec(); heard = ''; session = '';
+    if (on) { on = false; TTS.stop(); AV.setTalking(false); }
+    phase = 'off'; render();
+  }
+  btn.addEventListener('click', () => (on ? stop() : start()));
+  document.addEventListener('visibilitychange', () => { if (document.hidden && on) stop(); });
+  return { available, render, start, stop, resume, hold, speaking, isOn: () => on, listening: () => on && phase === 'listening' };
+})();
+
+/* ---------- composer ---------- */
+const msg = $('#msg');
+function autosize() { msg.style.height = 'auto'; const h = msg.scrollHeight + 2; msg.style.height = Math.min(h, 124) + 'px'; msg.style.overflowY = h > 124 ? 'auto' : 'hidden'; }
+function armAutoSend() {
+  const AUTO_MS = S.waitSec * 1000;
+  clearTimeout(autoT);
+  const sb = $('#sendBtn'); sb.classList.remove('arming');
+  if (S.mode !== 'call' || !S.autoSend || busy || blocked || !msg.value.trim()) return;
+  void sb.offsetWidth; sb.style.setProperty('--arm', AUTO_MS + 'ms'); sb.classList.add('arming');
+  autoT = setTimeout(() => {
+    sb.classList.remove('arming');
+    if (busy || !msg.value.trim()) return;
+    msg.blur();
+    setTimeout(() => send(), 80);
+  }, AUTO_MS);
+}
+msg.addEventListener('input', () => { autosize(); armAutoSend(); updateTurn(); });
+msg.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); send(); }
+});
+$('#composer').addEventListener('submit', e => {
+  e.preventDefault();
+  if (busy) { if (ctl) ctl.abort(); return; }
+  send();
+});
+$('#hintBtn').appendChild(icon('bulb'));
+$('#hintBtn').addEventListener('click', () => showHints($('#hints').hidden));
+$('#whoCaret').appendChild(icon('caret', 18));
+const tip = $('#tip');
+const tipText = el('span', ''); tipText.id = 'tipText'; tip.append(icon('mic', 14), tipText);
+$('#modeCall').appendChild(icon('phone', 18)); $('#modeChat').appendChild(icon('chat', 18));
+$('#modeCall').addEventListener('click', () => { if (S.mode === 'call') return; S.mode = 'call'; save(); applyMode(); greetIfFresh(); });
+$('#modeChat').addEventListener('click', () => { if (S.mode !== 'call') return; S.mode = 'chat'; save(); clearTimeout(autoT); $('#sendBtn').classList.remove('arming'); applyMode(); });
+
+setBusyUI(false);
+renderBadge();
+applyChar();
+renderBanner();
+})();
+</script>
+
+</body>
+</html>
