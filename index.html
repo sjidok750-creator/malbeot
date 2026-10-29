@@ -232,6 +232,31 @@ ruby rt{font-size:.52em;color:var(--muted);font-weight:500}
 .live .bar i{display:block;height:100%;width:100%;background:var(--me);transform-origin:left;animation:fill var(--wait,3s) linear forwards}
 @keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .row.col input[type=password],.row.col select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface-2);color:var(--ink);font-size:15px}
+/* reports */
+#noteMode{margin:2px 0 10px}
+#paneReports{display:flex;flex-direction:column;gap:10px}
+#paneReports[hidden]{display:none}
+#paneReports .grp{margin:8px 0 0}
+.rcard{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px;min-width:0}
+.rcard .rmeta{font-size:12px;color:var(--muted)}
+.rcard .rsum{font-size:14.5px;line-height:1.6}
+.rsec{display:flex;flex-direction:column;gap:6px}
+.rsec h3{margin:0;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em}
+.ritem{display:flex;align-items:flex-start;gap:6px;min-width:0}
+.ritem .rt{flex:1;min-width:0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.ritem .rx{font-size:15.5px;font-weight:500}
+.ritem .rs{color:var(--muted);text-decoration:line-through;font-size:13px}
+.ritem .rk{color:var(--muted);font-size:12.5px}
+.rgoal{font-size:14px;background:var(--fix-bg);color:var(--fix-ink);border:1px solid var(--fix-line);border-radius:10px;padding:8px 10px}
+.rwait{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px;padding:6px 2px}
+.rwait i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:hop 1s ease-in-out infinite}
+.rwait i:nth-child(2){animation-delay:.15s}.rwait i:nth-child(3){animation-delay:.3s}
+.reports{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.reports > li > button{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.reports .rl1{font-size:12px;color:var(--muted)}
+.reports .rl2{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.pbox{border:1px dashed var(--line);border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.6;display:flex;flex-direction:column;gap:6px}
+.pbox .pk{color:var(--muted);font-size:12px}
 @media (max-height:620px){.stage{height:120px}.scenes{padding-top:6px}}
 @media (prefers-reduced-motion:reduce){.wave i,.pending i,.tag-status[data-s="think"] .wave i,.stage-av.is-photo img,.stage.speaking .stage-av.is-photo img,.composer textarea.yourturn,.live .dot{animation:none}}
 </style>
@@ -245,7 +270,7 @@ ruby rt{font-size:.52em;color:var(--muted);font-weight:500}
     </button>
     <div class="top-actions">
       <div class="modeseg" role="group" aria-label="보기 방식"><button type="button" id="modeCall" aria-label="통화 모드" title="통화 모드"></button><button type="button" id="modeChat" aria-label="채팅 모드" title="채팅 모드"></button></div>
-      <button class="iconbtn" id="notesBtn" type="button" aria-label="표현 노트"><span class="badge" id="notesBadge" hidden></span></button>
+      <button class="iconbtn" id="notesBtn" type="button" aria-label="노트와 리포트"><span class="badge" id="notesBadge" hidden></span></button>
       <button class="iconbtn" id="setBtn" type="button" aria-label="설정"></button>
     </div>
   </header>
@@ -307,11 +332,22 @@ ruby rt{font-size:.52em;color:var(--muted);font-weight:500}
 </section>
 
 <section class="sheet" id="sheetNotes" role="dialog" aria-modal="true" aria-labelledby="hNotes" hidden>
-  <div class="sheet-head"><h2 id="hNotes">표현 노트</h2><button class="iconbtn" type="button" data-close aria-label="닫기"></button></div>
-  <div class="seg" id="notesTabs" aria-label="언어"></div>
-  <ul class="notes" id="notesList"></ul>
-  <p class="empty" id="notesEmpty">말풍선의 책갈피 버튼이나 단어 칩의 + 를 누르면 여기에 모여요.</p>
-  <p class="fhint">노트와 대화 기록은 이 기기의 브라우저에만 저장돼요.</p>
+  <div class="sheet-head"><h2 id="hNotes">노트</h2><button class="iconbtn" type="button" data-close aria-label="닫기"></button></div>
+  <div class="seg" id="noteMode" aria-label="보기"></div>
+  <div id="paneNotes">
+    <div class="seg" id="notesTabs" aria-label="언어"></div>
+    <ul class="notes" id="notesList"></ul>
+    <p class="empty" id="notesEmpty">말풍선의 책갈피 버튼이나 단어 칩의 + 를 누르면 여기에 모여요.</p>
+  </div>
+  <div id="paneReports" hidden>
+    <button class="wide" id="reportBtn" type="button">이 대화로 리포트 만들기</button>
+    <div id="reportOut"></div>
+    <div class="grp">선생님이 기억하는 나</div>
+    <div id="profileBox"></div>
+    <div class="grp">지난 리포트</div>
+    <ul class="reports" id="reportList"></ul>
+  </div>
+  <p class="fhint">노트·리포트·대화 기록은 이 기기의 브라우저에만 저장돼요.</p>
 </section>
 
 <script>
@@ -436,7 +472,7 @@ const LANG_LABEL = { en: 'English', ja: '日本語' };
 
 /* ---------- state ---------- */
 const KEY = 'malbeot.v1';
-const DEF = { char: 'yuna', scene: 'free', level: 'beg', showKo: true, showReading: true, auto: true, rate: 0.9, notes: [], logs: {}, notesTab: 'all', mode: 'call', autoSend: true, apiKey: '', model: 'claude-opus-5-5', waitSec: 3 };
+const DEF = { char: 'yuna', scene: 'free', level: 'beg', showKo: true, showReading: true, auto: true, rate: 0.9, notes: [], logs: {}, notesTab: 'all', noteMode: 'notes', reports: [], profile: {}, reportMark: {}, mode: 'call', autoSend: true, apiKey: '', model: 'claude-opus-5-5', waitSec: 3 };
 let S = (() => {
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { raw = null; }
@@ -446,6 +482,9 @@ let S = (() => {
   if (!SCENES.some(x => x.id === s.scene)) s.scene = DEF.scene;
   if (!LV[s.level]) s.level = DEF.level;
   if (!Array.isArray(s.notes)) s.notes = [];
+  if (!Array.isArray(s.reports)) s.reports = [];
+  if (!s.profile || typeof s.profile !== 'object') s.profile = {};
+  if (!s.reportMark || typeof s.reportMark !== 'object') s.reportMark = {};
   if (!s.logs || typeof s.logs !== 'object') s.logs = {};
   s.rate = Math.min(1.2, Math.max(0.6, Number(s.rate) || DEF.rate));
   s.waitSec = Math.min(6, Math.max(1.5, Number(s.waitSec) || DEF.waitSec));
@@ -649,7 +688,7 @@ function ttsLang(lang) { const c = CH(); return lang === 'en' ? (c.lang === 'en'
 function say(text, lang, opt = {}) {
   const c = CH();
   const mine = opt.avatar !== false && lang === c.lang;
-  const held = !opt.onDone && HF.listening();
+  const held = !opt.onDone && HF.isOn() && !busy;
   if (held) HF.hold();
   TTS.speak(text, ttsLang(lang), { rate: S.rate * (opt.slow ? 0.72 : 1), pitch: mine ? c.pitch : 1,
     onstart: () => { if (mine) AV.setTalking(true); },
@@ -686,6 +725,18 @@ function schema(lang) {
     '}',
     '"ruby" splits reply into consecutive pieces: a piece containing kanji gets its hiragana reading, every other piece gets "". Joining all pieces must reproduce "reply" exactly. "vocab" has 0–2 items (skip words that are too easy for the level). "hints" has exactly 2 items.'].join('\n');
 }
+function profileLines(lang) {
+  const pf = S.profile[lang];
+  if (!pf) return [];
+  const parts = [];
+  if (pf.level_ko) parts.push('level: ' + pf.level_ko);
+  if (pf.mistakes && pf.mistakes.length) parts.push('recurring weak points: ' + pf.mistakes.join('; '));
+  if (pf.interests && pf.interests.length) parts.push('interests: ' + pf.interests.join(', '));
+  if (pf.note_ko) parts.push('teaching note: ' + pf.note_ko);
+  if (!parts.length) return [];
+  return ['LEARNER PROFILE from earlier sessions (use it quietly, never read it out): ' + parts.join(' | '),
+    '- Now and then steer the talk so the learner can practise one of the weak points, and bring up their interests naturally.'];
+}
 function buildPrompt(c, sc, log, level) {
   const lang = c.lang === 'en' ? 'English' : 'Japanese';
   const lv = LV[level];
@@ -695,6 +746,7 @@ function buildPrompt(c, sc, log, level) {
     `CHARACTER: ${c.persona}`,
     `SCENE: ${sc.role}`,
     `LEARNER: a Korean speaker. Level: ${lv.p[c.lang]}`,
+    ...profileLines(c.lang),
     'RULES:',
     `- Stay in character and keep the conversation going; usually end with one short question. "reply" is only in ${lang}.`,
     '- The learner may type, use voice dictation (so ignore missing punctuation, capitalisation and small spelling slips), write Korean, or mix languages.',
@@ -744,7 +796,8 @@ const REPLY_SCHEMA = obj({
   hints: { type: 'array', items: obj({ text: STR, reading: STR, ko: STR }) },
   mood: { type: 'string', enum: ['happy', 'neutral', 'surprised', 'thinking'] },
 });
-async function apiJson(prompt, signal) {
+const REPLY_SUFFIX = '\nWhen there is nothing to correct, set every field of "correction" to an empty string. For English, "ruby" is [] and every "reading" is "".';
+async function apiJson(prompt, { signal, onText, schema = REPLY_SCHEMA, suffix = REPLY_SUFFIX } = {}) {
   let Anthropic;
   try {
     if (!sdkMod) sdkMod = await import(SDK_URL);
@@ -757,14 +810,19 @@ async function apiJson(prompt, signal) {
   const model = MODELS[S.model] ? S.model : DEF.model;
   const params = {
     model, max_tokens: 16000,
-    output_config: { effort: 'low', format: { type: 'json_schema', schema: REPLY_SCHEMA } },
-    messages: [{ role: 'user', content: prompt + '\nWhen there is nothing to correct, set every field of "correction" to an empty string. For English, "ruby" is [] and every "reading" is "".' }],
+    output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+    messages: [{ role: 'user', content: prompt + suffix }],
   };
   let msg;
   try {
-    msg = model === 'claude-haiku-5-5'
-      ? await apiClient.messages.create(params, { signal })
-      : await apiClient.beta.messages.create({ ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }, { signal });
+    const stream = model === 'claude-haiku-5-5'
+      ? apiClient.messages.stream(params, { signal })
+      : apiClient.beta.messages.stream({ ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }, { signal });
+    let acc = '';
+    for await (const ev of stream) {
+      if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta') { acc += ev.delta.text; if (onText) onText(acc); }
+    }
+    msg = await stream.finalMessage();
   } catch (e) {
     if (e instanceof Anthropic.APIUserAbortError) throw { code: 'cancelled' };
     if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) throw { code: 'bad_key' };
@@ -783,9 +841,65 @@ async function apiJson(prompt, signal) {
 async function getBackend() {
   if (IN_CLAUDE) {
     const sample = await samplePromise;
-    return sample ? (prompt, signal) => sample.json(prompt, { modelTier: 'quick', cache: false, signal }) : null;
+    return sample ? (prompt, o = {}) => sample.json(prompt, {
+      modelTier: o.tier || 'quick', cache: false, signal: o.signal,
+      onText: o.onText ? ({ text }) => o.onText(text) : undefined,
+    }) : null;
   }
   return S.apiKey ? apiJson : null;
+}
+
+/* Pull the "reply" string out of JSON that is still streaming, and hand over finished sentences. */
+function makeReplyStreamer(lang, onChunk) {
+  let start = -1, sent = 0, closed = false;
+  const endRe = lang === 'ja' ? /[。！？!?…]+/g : /[.!?…]+(?=\s)/g;
+  return function feed(full) {
+    if (closed) return;
+    if (start < 0) { const m = /"reply"\s*:\s*"/.exec(full); if (!m) return; start = m.index + m[0].length; }
+    let txt = '', i = start;
+    while (i < full.length) {
+      const ch = full[i];
+      if (ch === '"') { closed = true; break; }
+      if (ch === '\\') {
+        const nx = full[i + 1];
+        if (nx === undefined) break;
+        if (nx === 'u') { const hex = full.substr(i + 2, 4); if (hex.length < 4) break; txt += String.fromCharCode(parseInt(hex, 16)); i += 6; continue; }
+        txt += (nx === 'n' || nx === 't' || nx === 'r') ? ' ' : nx; i += 2; continue;
+      }
+      txt += ch; i++;
+    }
+    let cut = sent;
+    if (closed) cut = txt.length;
+    else { endRe.lastIndex = sent; let m; while ((m = endRe.exec(txt))) cut = m.index + m[0].length; }
+    if (cut > sent) { const chunk = txt.slice(sent, cut); sent = cut; onChunk(chunk, txt); }
+  };
+}
+/* Read sentences one after another as they arrive; onDone after the last one. */
+function makeStreamSpeaker(lang, onDone) {
+  const q = [];
+  let speaking = false, ended = false, finished = false;
+  const c = CH(), mine = lang === c.lang;
+  function next() {
+    if (finished) return;
+    if (!q.length) { speaking = false; if (ended) { finished = true; if (mine) AV.setTalking(false); if (onDone) onDone(); } return; }
+    speaking = true;
+    TTS.speak(q.shift(), ttsLang(lang), { rate: S.rate, pitch: mine ? c.pitch : 1,
+      onstart: () => { if (mine) AV.setTalking(true); }, onend: next });
+  }
+  return {
+    push(t) { t = t.trim(); if (!t || finished) return; q.push(t); if (!speaking) next(); },
+    end() { ended = true; if (!speaking) next(); },
+    cancel() { q.length = 0; ended = true; finished = true; },
+  };
+}
+function showPartial(text) {
+  const lang = CH().lang;
+  const sub = $('#subtitle'); sub.textContent = '';
+  const t = el('div', 'st', text); t.lang = lang; sub.append(t);
+  const p = document.querySelector('#log .pending');
+  if (p) { p.classList.remove('pending'); p.textContent = ''; const d = el('div', 't', text); d.lang = lang; p.append(d); }
+  else { const d = document.querySelector('#log .streaming .t'); if (d) d.textContent = text; }
+  if (p) p.classList.add('streaming');
 }
 
 let busy = false, busyKey = '', ctl = null, lastErr = '', autoT = 0;
@@ -809,8 +923,16 @@ async function ask() {
   const log = getLog(key);
   busyKey = key; lastErr = ''; ctl = new AbortController();
   setBusyUI(true); AV.setThinking(true); renderLog();
+  let spk = null;
   try {
-    const r = await backend(buildPrompt(c, sc, log, level), ctl.signal);
+    const speakNow = S.auto || S.mode === 'call';
+    const feed = makeReplyStreamer(c.lang, (chunk, partial) => {
+      if (key !== logKey()) return;
+      if (!spk && speakNow) { AV.setThinking(false); HF.speaking(); spk = makeStreamSpeaker(c.lang, HF.resume); }
+      if (spk) spk.push(chunk);
+      showPartial(partial);
+    });
+    const r = await backend(buildPrompt(c, sc, log, level), { signal: ctl.signal, onText: feed });
     const { them, fix } = clean(r, c.lang);
     const last = log[log.length - 1];
     if (fix && last && last.who === 'me') last.fix = fix;
@@ -821,9 +943,12 @@ async function ask() {
     if (key === logKey()) {
       renderLog();
       AV.setMood(them.mood);
-      if (S.auto || S.mode === 'call') { HF.speaking(); say(them.text, c.lang, { onDone: HF.resume }); } else HF.resume();
+      if (spk) spk.end();
+      else if (S.auto || S.mode === 'call') { HF.speaking(); say(them.text, c.lang, { onDone: HF.resume }); }
+      else HF.resume();
     }
   } catch (e) {
+    if (spk) { spk.cancel(); TTS.stop(); AV.setTalking(false); }
     handleErr(e); HF.stop();
   } finally {
     busy = false; ctl = null; setBusyUI(false); AV.setThinking(false);
@@ -1201,7 +1326,177 @@ $('#resetBtn').addEventListener('click', e => {
   HF.stop(); TTS.stop(); AV.setTalking(false); delete S.logs[logKey()]; save(); lastErr = ''; close(); showHints(false); renderLog();
 });
 
+/* ---------- conversation reports + what the teacher remembers ---------- */
+const LIST = (items) => ({ type: 'array', items });
+const REPORT_SCHEMA = obj({
+  summary_ko: STR,
+  mistakes: LIST(obj({ said: STR, better: STR, why_ko: STR })),
+  expressions: LIST(obj({ text: STR, reading: STR, ko: STR })),
+  next_goal_ko: STR,
+  profile: obj({ level_ko: STR, mistakes: LIST(STR), interests: LIST(STR), note_ko: STR }),
+});
+let reportBusy = false, reportErr = '', reportView = null;
+function newTurns(key = logKey()) {
+  const log = getLog(key), mark = Number(S.reportMark[key]) || 0;
+  return log.slice(mark).filter(m => m.who === 'me').length;
+}
+function buildReportPrompt(c, sc, log, mark) {
+  const lang = c.lang === 'en' ? 'English' : 'Japanese';
+  const from = Math.max(0, mark - 1);
+  const hist = log.slice(from).slice(-40).map(m => (m.who === 'me' ? 'Learner' : c.n) + ': ' + m.text + (m.fix ? '   [suggested: ' + m.fix.better + ']' : ''));
+  const prev = S.profile[c.lang] || {};
+  return [
+    `You are a language coach. Write a short report for a Korean learner of ${lang} after a practice conversation with the character ${c.n}.`,
+    `Scene: ${sc.role}`,
+    `Learner level setting: ${LV[S.level].p[c.lang]}`,
+    'PREVIOUS LEARNER PROFILE (may be empty): ' + JSON.stringify({ level_ko: prev.level_ko || '', mistakes: prev.mistakes || [], interests: prev.interests || [], note_ko: prev.note_ko || '' }),
+    '',
+    'CONVERSATION (this session):',
+    ...hist,
+    '',
+    `Write everything in Korean except quoted ${lang} phrases.`,
+    '- summary_ko: 2-3 sentences on what was talked about and how the learner did (encouraging but honest).',
+    `- mistakes: up to 5 of the learner's most important mistakes in this session. said = exactly what the learner said, better = a natural ${lang} version, why_ko = one short reason. Skip typos, punctuation and capitalisation. Empty if none.`,
+    `- expressions: exactly 5 useful ${lang} expressions from this conversation or ones the learner needed, with Korean meaning; reading = hiragana for Japanese, "" for English.`,
+    '- next_goal_ko: one concrete goal for next time.',
+    '- profile: the UPDATED learner profile combining the previous profile with this session: level_ko (one short phrase), mistakes (up to 6 recurring weak points, short Korean phrases with a tiny example), interests (up to 6 short topics the learner talked about), note_ko (one sentence on how to teach this learner).',
+    'Reply with only one JSON object with the keys summary_ko, mistakes, expressions, next_goal_ko, profile.',
+  ].join('\n');
+}
+function cleanReport(r) {
+  const str = v => (typeof v === 'string' ? v.trim() : '');
+  const arr = v => (Array.isArray(v) ? v : []);
+  if (!r || typeof r !== 'object' || !str(r.summary_ko)) throw { code: 'invalid_json' };
+  const pf = r.profile && typeof r.profile === 'object' ? r.profile : {};
+  return {
+    summary: str(r.summary_ko),
+    mistakes: arr(r.mistakes).filter(m => m && str(m.better)).slice(0, 5).map(m => ({ said: str(m.said), better: str(m.better), why: str(m.why_ko) })),
+    expressions: arr(r.expressions).filter(x => x && str(x.text)).slice(0, 6).map(x => ({ text: str(x.text), reading: str(x.reading), ko: str(x.ko) })),
+    goal: str(r.next_goal_ko),
+    profile: { level_ko: str(pf.level_ko), mistakes: arr(pf.mistakes).map(str).filter(Boolean).slice(0, 6), interests: arr(pf.interests).map(str).filter(Boolean).slice(0, 6), note_ko: str(pf.note_ko) },
+  };
+}
+async function makeReport() {
+  if (reportBusy) return;
+  const key = logKey(), c = CH(), sc = SC(), log = getLog(key);
+  const mark = Number(S.reportMark[key]) || 0;
+  if (!newTurns(key)) { reportErr = '리포트로 정리할 새 대화가 아직 없어요.'; renderReports(); return; }
+  const backend = await getBackend();
+  if (!backend) { reportErr = IN_CLAUDE ? '여기서는 Claude에 연결되지 않아요.' : '설정에서 API 키를 먼저 넣어 주세요.'; renderReports(); return; }
+  reportBusy = true; reportErr = ''; reportView = null; renderReports();
+  try {
+    const raw = await backend(buildReportPrompt(c, sc, log, mark), { schema: REPORT_SCHEMA, suffix: '', tier: 'default' });
+    const rp = cleanReport(raw);
+    const item = { id: Date.now(), ts: Date.now(), char: S.char, scene: S.scene, lang: c.lang, ...rp };
+    S.reports.unshift(item);
+    if (S.reports.length > 40) S.reports.length = 40;
+    if (rp.profile.level_ko || rp.profile.mistakes.length || rp.profile.interests.length) S.profile[c.lang] = rp.profile;
+    S.reportMark[key] = log.length;
+    save(); reportView = item.id;
+  } catch (e) {
+    const code = (e && e.code) || 'upstream_error';
+    reportErr = code === 'bad_request' ? 'Claude 서버가 요청을 거절했어요: ' + String((e && e.message) || '').slice(0, 200) : (ERR[code] || '리포트를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+  } finally {
+    reportBusy = false; renderReports();
+  }
+}
+function autoReport() {
+  if (newTurns() < 2) return;
+  S.noteMode = 'reports'; save();
+  renderNotes(); open('sheetNotes');
+  makeReport();
+}
+function reportCard(r) {
+  const card = el('div', 'rcard');
+  const ch = CHARS[r.char], sc = SCENES.find(x => x.id === r.scene);
+  const d = new Date(r.ts);
+  card.append(el('div', 'rmeta', `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} · ${ch ? ch.k : ''} · ${sc ? sc.ko : ''} · ${LANG_KO[r.lang]}`));
+  card.append(el('div', 'rsum', r.summary));
+  if (r.mistakes.length) {
+    const sec = el('div', 'rsec'); sec.append(el('h3', '', '고쳐 말하기'));
+    for (const m of r.mistakes) {
+      const it = el('div', 'ritem'), t = el('div', 'rt');
+      if (m.said) { const a = el('div', 'rs', m.said); a.lang = r.lang; t.append(a); }
+      const b = el('div', 'rx', m.better); b.lang = r.lang; t.append(b);
+      if (m.why) t.append(el('div', 'rk', m.why));
+      it.append(t, actBtn('speaker', '듣기', () => say(m.better, r.lang, { avatar: false })));
+      sec.append(it);
+    }
+    card.append(sec);
+  }
+  if (r.expressions.length) {
+    const sec = el('div', 'rsec'); sec.append(el('h3', '', '외울 표현'));
+    for (const x of r.expressions) {
+      const it = el('div', 'ritem'), t = el('div', 'rt');
+      const a = el('div', 'rx', x.text); a.lang = r.lang; t.append(a);
+      if (r.lang === 'ja' && x.reading && x.reading !== x.text) { const rr = el('div', 'rk', x.reading); rr.lang = 'ja'; t.append(rr); }
+      if (x.ko) t.append(el('div', 'rk', x.ko));
+      it.append(t, actBtn('speaker', '듣기', () => say(x.text, r.lang, { avatar: false })), saveBtn({ lang: r.lang, text: x.text, reading: x.reading, ko: x.ko }));
+      sec.append(it);
+    }
+    const all = el('button', 'btn', '표현 모두 노트에 저장'); all.type = 'button';
+    all.addEventListener('click', () => { for (const x of r.expressions) if (!isSaved(r.lang, x.text)) toggleNote({ lang: r.lang, text: x.text, reading: x.reading, ko: x.ko }); renderReports(); });
+    sec.append(all);
+    card.append(sec);
+  }
+  if (r.goal) card.append(el('div', 'rgoal', '다음 목표 · ' + r.goal));
+  return card;
+}
+function renderProfile() {
+  const box = $('#profileBox'); box.textContent = '';
+  const lang = CH().lang, pf = S.profile[lang];
+  const p = el('div', 'pbox');
+  if (!pf) { p.append(el('div', 'pk', `아직 ${LANG_KO[lang]} 리포트가 없어요. 리포트를 만들면 자주 틀리는 것과 관심사를 기억해서 다음 대화에 반영해요.`)); box.append(p); return; }
+  const row = (k, v) => { if (!v) return; const d = el('div'); d.append(el('div', 'pk', k), el('div', '', v)); p.append(d); };
+  row(LANG_KO[lang] + ' 수준', pf.level_ko);
+  row('자주 틀리는 것', pf.mistakes.join(' · '));
+  row('관심사', pf.interests.join(' · '));
+  row('가르치는 방법', pf.note_ko);
+  const reset = el('button', 'btn', '기억 지우기'); reset.type = 'button';
+  let arm = 0;
+  reset.addEventListener('click', () => {
+    if (!arm) { reset.textContent = '한 번 더 누르면 지워요'; arm = setTimeout(() => { arm = 0; reset.textContent = '기억 지우기'; }, 3000); return; }
+    clearTimeout(arm); delete S.profile[lang]; save(); renderReports();
+  });
+  p.append(reset);
+  box.append(p);
+}
+function renderReports() {
+  const btn = $('#reportBtn'), out = $('#reportOut');
+  const n = newTurns();
+  btn.disabled = reportBusy || !n;
+  btn.textContent = reportBusy ? '리포트를 만드는 중' : n ? `이 대화로 리포트 만들기 (새로 말한 것 ${n}번)` : '리포트로 정리할 새 대화가 없어요';
+  out.textContent = '';
+  if (reportBusy) { const w = el('div', 'rwait'); w.append(el('i'), el('i'), el('i'), el('span', '', '오늘 대화를 정리하고 있어요')); out.append(w); }
+  else if (reportErr) out.append(el('div', 'rgoal', reportErr));
+  else if (reportView) { const r = S.reports.find(x => x.id === reportView); if (r) out.append(reportCard(r)); }
+  renderProfile();
+  const list = $('#reportList'); list.textContent = '';
+  const items = S.reports.filter(r => r.id !== reportView);
+  if (!items.length) { list.append(el('li', 'pk', '아직 없어요.')); return; }
+  for (const r of items) {
+    const li = el('li'), b = el('button'); b.type = 'button';
+    const ch = CHARS[r.char], d = new Date(r.ts);
+    b.append(el('span', 'rl1', `${d.getMonth() + 1}월 ${d.getDate()}일 · ${ch ? ch.k : ''} · ${LANG_KO[r.lang]}`), el('span', 'rl2', r.summary));
+    b.addEventListener('click', () => { reportView = r.id; reportErr = ''; renderReports(); $('#sheetNotes').scrollTop = 0; });
+    li.append(b); list.append(li);
+  }
+}
+function renderNoteMode() {
+  const seg = $('#noteMode'); seg.textContent = '';
+  for (const [k, label] of [['notes', '표현 노트'], ['reports', '리포트']]) {
+    const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', S.noteMode === k ? 'true' : 'false');
+    b.append(el('b', '', label));
+    b.addEventListener('click', () => { S.noteMode = k; save(); renderNotes(); });
+    seg.append(b);
+  }
+  $('#paneNotes').hidden = S.noteMode === 'reports';
+  $('#paneReports').hidden = S.noteMode !== 'reports';
+}
+$('#reportBtn').addEventListener('click', () => makeReport());
 function renderNotes() {
+  renderNoteMode();
+  if (S.noteMode === 'reports') { renderReports(); return; }
   const tabs = $('#notesTabs'); tabs.textContent = '';
   for (const [k, label] of [['all', '전체'], ['en', 'English'], ['ja', '日本語']]) {
     const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', S.notesTab === k ? 'true' : 'false');
@@ -1301,11 +1596,12 @@ const HF = (() => {
     send(text);
   }
   function listen() {
-    if (!on || busy) return;
+    if (!on) return;
+    if (busy || AV.isTalking()) { clearTimeout(restartT); restartT = setTimeout(listen, 300); return; }
     heard = ''; session = '';
     setPhase('listening'); startRec(); armIdle();
   }
-  function resume() { if (!on || busy) return; clearTimeout(restartT); restartT = setTimeout(listen, 300); }
+  function resume() { if (!on) return; clearTimeout(restartT); restartT = setTimeout(listen, 300); }
   function hold() { if (!on) return; clearTimeout(silenceT); stopRec(); setPhase('speaking'); }
   function speaking() { if (on) { stopRec(); setPhase('speaking'); } }
   function start() {
@@ -1325,7 +1621,7 @@ const HF = (() => {
     if (on) { on = false; TTS.stop(); AV.setTalking(false); }
     phase = 'off'; render();
   }
-  btn.addEventListener('click', () => (on ? stop() : start()));
+  btn.addEventListener('click', () => { if (on) { stop(); autoReport(); } else start(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && on) stop(); });
   return { available, render, start, stop, resume, hold, speaking, isOn: () => on, listening: () => on && phase === 'listening' };
 })();
